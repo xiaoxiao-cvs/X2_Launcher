@@ -3,39 +3,39 @@ import logging
 from pathlib import Path
 import requests
 import asyncio
+from typing import Optional
+from .logger import logger
 
-async def setup_environment():
-    """异步初始化环境"""
+async def setup_environment() -> None:
+    """异步环境初始化"""
     try:
-        # 在这里添加需要的异步初始化操作
-        await asyncio.sleep(0.1)  # 给事件循环一个运行的机会
-        return True
+        # 创建必要的目录
+        dirs = [
+            'assets',
+            'maibot_versions',
+            'logs'
+        ]
+        
+        for dir_name in dirs:
+            path = Path(dir_name)
+            path.mkdir(parents=True, exist_ok=True)
+            logger.log(f"检查目录: {dir_name}")
+            
+        # 检查网络连接
+        await check_network()
+        
     except Exception as e:
-        logging.error(f"环境初始化失败: {e}")
-        return False
+        logger.log(f"环境初始化失败: {e}", "ERROR")
 
-def check_network():
+async def check_network() -> bool:
     """检查网络连接"""
     try:
-        response = requests.get("https://api.github.com", timeout=5)
-        return response.status_code == 200
-    except:
-        return False
-
-def setup_environment():
-    """设置运行环境"""
-    # 确保必要的目录存在
-    dirs = ['assets', 'logs', 'maibot_versions']
-    for d in dirs:
-        os.makedirs(d, exist_ok=True)
-    
-    # 配置日志
-    log_file = Path("logs/deploy.log")
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_file, encoding='utf-8'),
-            logging.StreamHandler()
-        ]
-    )
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://api.github.com', timeout=5) as resp:
+                if resp.status == 200:
+                    logger.log("网络连接正常")
+                else:
+                    logger.log("网络连接异常", "WARNING")
+    except Exception as e:
+        logger.log(f"网络检查失败: {e}", "WARNING")

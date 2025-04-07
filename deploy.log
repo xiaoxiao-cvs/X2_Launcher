@@ -1,0 +1,237 @@
+2025-04-07 12:08:30,742 - ERROR - Exception in callback main.<locals>.<lambda>() at D:\桌面\X-Deploy-Station\main.py:52
+handle: <Handle main.<locals>.<lambda>() at D:\桌面\X-Deploy-Station\main.py:52>
+Traceback (most recent call last):
+  File "C:\Users\筱\AppData\Local\Programs\Python\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\桌面\X-Deploy-Station\main.py", line 52, in <lambda>
+    lambda: asyncio.create_task(setup_environment())
+            ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\筱\AppData\Local\Programs\Python\Python313\Lib\asyncio\tasks.py", line 410, in create_task
+    task = loop.create_task(coro, name=name)
+  File "C:\Users\筱\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 468, in create_task
+    task = tasks.Task(coro, loop=self, name=name, context=context)
+TypeError: a coroutine was expected, got None
+2025-04-07 12:10:55,288 - INFO - 正在克隆仓库...
+2025-04-07 12:10:55,298 - INFO - 正在克隆仓库...
+2025-04-07 12:10:55,363 - ERROR - fatal: destination path 'maibot_versions\加载中...' already exists and is not an empty directory.
+2025-04-07 12:10:55,363 - INFO - fatal: destination path 'maibot_versions\加载中...' already exists and is not an empty directory.
+2025-04-07 12:10:55,364 - ERROR - 部署失败: 代码更新/克隆失败
+2025-04-07 12:10:55,377 - INFO - 部署失败: 代码更新/克隆失败
+2025-04-07 12:18:01,795 - INFO - 正在更新仓库...
+2025-04-07 12:18:01,805 - INFO - 正在更新仓库...
+2025-04-07 12:18:03,385 - INFO - Already up to date.
+2025-04-07 12:18:03,385 - INFO - Already up to date.
+2025-04-07 12:18:03,386 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 12:18:03,400 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 17:15:25,883 - INFO - 正在更新仓库...
+2025-04-07 17:15:25,893 - INFO - 正在更新仓库...
+2025-04-07 17:15:27,518 - INFO - Already up to date.
+2025-04-07 17:15:27,519 - INFO - Already up to date.
+2025-04-07 17:15:27,519 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 17:15:27,535 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 17:25:21,284 - INFO - 正在克隆仓库...
+2025-04-07 17:25:21,294 - INFO - 正在克隆仓库...
+2025-04-07 17:25:23,722 - ERROR - Cloning into 'maibot_versions\0.6.0-alpha'...
+2025-04-07 17:25:23,723 - INFO - Cloning into 'maibot_versions\0.6.0-alpha'...
+2025-04-07 17:25:23,723 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 17:25:23,745 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 17:36:36,935 - INFO - 正在克隆仓库...
+2025-04-07 17:36:36,944 - INFO - 正在克隆仓库...
+2025-04-07 17:36:39,363 - ERROR - Cloning into 'maibot_versions\0.6.0-alpha'...
+2025-04-07 17:36:39,364 - INFO - Cloning into 'maibot_versions\0.6.0-alpha'...
+2025-04-07 17:36:39,364 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 17:36:39,385 - INFO - 代码更新完成，正在安装依赖...
+2025-04-07 18:09:57 - CRITICAL - Application crashed: An asyncio.Future, a coroutine or an awaitable is required
+2025-04-07 18:10:01 - ERROR - 版本列表获取失败: main thread is not in main loop
+2025-04-07 18:12:28 - CRITICAL - 程序异常退出: An asyncio.Future, a coroutine or an awaitable is required
+2025-04-07 18:13:28 - INFO - 网络连接正常
+2025-04-07 18:13:57 - INFO - 网络连接正常
+2025-04-07 18:15:37 - INFO - 程序被用户中断
+2025-04-07 18:15:38 - ERROR - Future exception was never retrieved
+future: <Future finished exception=RuntimeError('main thread is not in main loop')>
+Traceback (most recent call last):
+  File "d:\桌面\X-Deploy-Station\main.py", line 26, in _run
+    result = func()
+  File "D:\桌面\X-Deploy-Station\.venv\Lib\site-packages\customtkinter\windows\ctk_tk.py", line 157, in mainloop
+    self._windows_set_titlebar_color(self._get_appearance_mode())
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\桌面\X-Deploy-Station\.venv\Lib\site-packages\customtkinter\windows\ctk_tk.py", line 281, in _windows_set_titlebar_color
+    self.focused_widget_before_widthdraw = self.focus_get()
+                                           ~~~~~~~~~~~~~~^^
+  File "C:\Users\筱\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 804, in focus_get
+    name = self.tk.call('focus')
+RuntimeError: main thread is not in main loop
+2025-04-07 18:15:45 - INFO - 网络连接正常
+2025-04-07 18:16:44 - INFO - 检查目录: assets
+2025-04-07 18:16:44 - INFO - 检查目录: maibot_versions
+2025-04-07 18:16:44 - INFO - 检查目录: logs
+2025-04-07 18:16:45 - INFO - 网络连接正常
+2025-04-07 18:16:55 - INFO - 正在克隆仓库...
+2025-04-07 18:16:57 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.6.0-alpha'...
+2025-04-07 18:16:57 - INFO - ERROR: warning: Could not find remote branch Release 0.6.0-alpha to clone.
+2025-04-07 18:16:57 - INFO - ERROR: fatal: Remote branch Release 0.6.0-alpha not found in upstream origin
+2025-04-07 18:16:57 - INFO - 创建虚拟环境...
+2025-04-07 18:17:01 - INFO - 升级pip...
+2025-04-07 18:17:03 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 18:17:03 - INFO - ERROR: 
+2025-04-07 18:17:03 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\release 0.6.0-alpha\venv\lib\site-packages (24.3.1)
+2025-04-07 18:17:03 - INFO - ERROR: [notice] A new release of pip is available: 24.3.1 -> 25.0.1
+2025-04-07 18:17:03 - INFO - Collecting pip
+2025-04-07 18:17:03 - INFO - ERROR: [notice] To update, run: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.6.0-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 18:17:03 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 18:17:03 - INFO - ERROR: ERROR: To modify pip, please run the following command:
+2025-04-07 18:17:03 - INFO - ERROR: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.6.0-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 18:17:11 - ERROR - 启动失败: bot.py not found
+2025-04-07 18:18:09 - INFO - 检查目录: assets
+2025-04-07 18:18:09 - INFO - 检查目录: maibot_versions
+2025-04-07 18:18:09 - INFO - 检查目录: logs
+2025-04-07 18:18:09 - INFO - 网络连接正常
+2025-04-07 18:18:22 - INFO - 正在克隆仓库...
+2025-04-07 18:18:23 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.5.15-alpha'...
+2025-04-07 18:18:23 - INFO - ERROR: warning: Could not find remote branch Release 0.5.15-alpha to clone.
+2025-04-07 18:18:23 - INFO - ERROR: fatal: Remote branch Release 0.5.15-alpha not found in upstream origin
+2025-04-07 18:18:23 - INFO - 创建虚拟环境...
+2025-04-07 18:18:27 - INFO - 升级pip...
+2025-04-07 18:18:30 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 18:18:30 - INFO - ERROR: 
+2025-04-07 18:18:30 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\release 0.5.15-alpha\venv\lib\site-packages (24.3.1)
+2025-04-07 18:18:30 - INFO - ERROR: [notice] A new release of pip is available: 24.3.1 -> 25.0.1
+2025-04-07 18:18:30 - INFO - Collecting pip
+2025-04-07 18:18:30 - INFO - ERROR: [notice] To update, run: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.5.15-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 18:18:30 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 18:18:30 - INFO - ERROR: ERROR: To modify pip, please run the following command:
+2025-04-07 18:18:30 - INFO - ERROR: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.5.15-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 18:23:14 - INFO - 检查目录: assets
+2025-04-07 18:23:14 - INFO - 检查目录: maibot_versions
+2025-04-07 18:23:14 - INFO - 检查目录: logs
+2025-04-07 18:23:15 - INFO - 网络连接正常
+2025-04-07 18:23:26 - INFO - 正在克隆仓库...
+2025-04-07 18:23:26 - ERROR - 仓库克隆完成但未找到bot.py文件
+2025-04-07 18:23:26 - ERROR - 代码获取失败，跳过环境配置
+2025-04-07 18:27:27 - INFO - 检查目录: assets
+2025-04-07 18:27:27 - INFO - 检查目录: maibot_versions
+2025-04-07 18:27:27 - INFO - 检查目录: logs
+2025-04-07 18:27:27 - INFO - 网络连接正常
+2025-04-07 18:27:43 - ERROR - API访问失败: 发行版获取失败: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/MaiM-with-u/MaiBot/releases?page=1&per_page=100 (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x000002058947C980>, 'Connection to api.github.com timed out. (connect timeout=15)'))
+2025-04-07 18:29:34 - INFO - 检查目录: assets
+2025-04-07 18:29:34 - INFO - 检查目录: maibot_versions
+2025-04-07 18:29:34 - INFO - 检查目录: logs
+2025-04-07 18:29:35 - INFO - 网络连接正常
+2025-04-07 18:29:35 - ERROR - 版本获取失败: name 'Retry' is not defined
+2025-04-07 18:31:03 - INFO - 程序被用户中断
+2025-04-07 18:31:07 - INFO - 检查目录: assets
+2025-04-07 18:31:07 - INFO - 检查目录: maibot_versions
+2025-04-07 18:31:07 - INFO - 检查目录: logs
+2025-04-07 18:31:07 - INFO - 网络连接正常
+2025-04-07 18:31:16 - INFO - 正在克隆仓库...
+2025-04-07 18:31:19 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.6.0-alpha'...
+2025-04-07 18:31:19 - INFO - ERROR: Note: switching to '647a0c657a86ef08a2ed7af7ee70532682c8ecbe'.
+2025-04-07 18:31:19 - INFO - ERROR: 
+2025-04-07 18:31:19 - INFO - ERROR: You are in 'detached HEAD' state. You can look around, make experimental
+2025-04-07 18:31:19 - INFO - ERROR: changes and commit them, and you can discard any commits you make in this
+2025-04-07 18:31:19 - INFO - ERROR: state without impacting any branches by switching back to a branch.
+2025-04-07 18:31:19 - INFO - ERROR: 
+2025-04-07 18:31:19 - INFO - ERROR: If you want to create a new branch to retain commits you create, you may
+2025-04-07 18:31:19 - INFO - ERROR: do so (now or later) by using -c with the switch command. Example:
+2025-04-07 18:31:19 - INFO - ERROR: 
+2025-04-07 18:31:19 - INFO - ERROR: git switch -c <new-branch-name>
+2025-04-07 18:31:19 - INFO - ERROR: 
+2025-04-07 18:31:19 - INFO - ERROR: Or undo this operation with:
+2025-04-07 18:31:19 - INFO - ERROR: 
+2025-04-07 18:31:19 - INFO - ERROR: git switch -
+2025-04-07 18:31:19 - INFO - ERROR: 
+2025-04-07 18:31:19 - INFO - ERROR: Turn off this advice by setting config variable advice.detachedHead to false
+2025-04-07 18:31:19 - INFO - ERROR: 
+2025-04-07 18:31:19 - INFO - 仓库克隆成功
+2025-04-07 18:31:19 - INFO - 代码更新完成，准备配置环境...
+2025-04-07 18:31:19 - INFO - 创建虚拟环境...
+2025-04-07 18:31:23 - INFO - 升级pip...
+2025-04-07 18:31:25 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 18:31:25 - INFO - ERROR: 
+2025-04-07 18:31:25 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\release 0.6.0-alpha\venv\lib\site-packages (24.3.1)
+2025-04-07 18:31:25 - INFO - ERROR: [notice] A new release of pip is available: 24.3.1 -> 25.0.1
+2025-04-07 18:31:25 - INFO - Collecting pip
+2025-04-07 18:31:25 - INFO - ERROR: [notice] To update, run: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.6.0-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 18:31:25 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 18:31:25 - INFO - ERROR: ERROR: To modify pip, please run the following command:
+2025-04-07 18:31:25 - INFO - ERROR: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.6.0-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 18:31:25 - INFO - 安装依赖...
+2025-04-07 18:36:24 - INFO - 程序被用户中断
+2025-04-07 18:39:01 - INFO - 检查目录: assets
+2025-04-07 18:39:01 - INFO - 检查目录: maibot_versions
+2025-04-07 18:39:01 - INFO - 检查目录: logs
+2025-04-07 18:39:02 - INFO - 网络连接正常
+2025-04-07 18:39:14 - INFO - 正在克隆仓库...
+2025-04-07 18:39:16 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.6.0-alpha'...
+2025-04-07 18:39:16 - INFO - ERROR: Note: switching to '647a0c657a86ef08a2ed7af7ee70532682c8ecbe'.
+2025-04-07 18:39:16 - INFO - ERROR: 
+2025-04-07 18:39:16 - INFO - ERROR: You are in 'detached HEAD' state. You can look around, make experimental
+2025-04-07 18:39:16 - INFO - ERROR: changes and commit them, and you can discard any commits you make in this
+2025-04-07 18:39:16 - INFO - ERROR: state without impacting any branches by switching back to a branch.
+2025-04-07 18:39:16 - INFO - ERROR: 
+2025-04-07 18:39:16 - INFO - ERROR: If you want to create a new branch to retain commits you create, you may
+2025-04-07 18:39:16 - INFO - ERROR: do so (now or later) by using -c with the switch command. Example:
+2025-04-07 18:39:16 - INFO - ERROR: 
+2025-04-07 18:39:16 - INFO - ERROR: git switch -c <new-branch-name>
+2025-04-07 18:39:16 - INFO - ERROR: 
+2025-04-07 18:39:16 - INFO - ERROR: Or undo this operation with:
+2025-04-07 18:39:16 - INFO - ERROR: 
+2025-04-07 18:39:16 - INFO - ERROR: git switch -
+2025-04-07 18:39:16 - INFO - ERROR: 
+2025-04-07 18:39:16 - INFO - ERROR: Turn off this advice by setting config variable advice.detachedHead to false
+2025-04-07 18:39:16 - INFO - ERROR: 
+2025-04-07 18:39:16 - INFO - 仓库克隆成功
+2025-04-07 18:39:16 - INFO - 代码更新完成，准备配置环境...
+2025-04-07 18:39:16 - INFO - 创建虚拟环境...
+2025-04-07 18:39:21 - INFO - 升级pip...
+2025-04-07 18:39:25 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 18:39:25 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\release 0.6.0-alpha\venv\lib\site-packages (24.3.1)
+2025-04-07 18:39:25 - INFO - Collecting pip
+2025-04-07 18:39:25 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 18:39:25 - INFO - Installing collected packages: pip
+2025-04-07 18:39:25 - INFO - Attempting uninstall: pip
+2025-04-07 18:39:25 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 18:39:25 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 18:39:25 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 18:39:25 - INFO - Successfully installed pip-25.0.1
+2025-04-07 18:39:25 - INFO - 安装依赖...
+2025-04-07 18:42:13 - INFO - 程序被用户中断
+2025-04-07 18:44:25 - INFO - 检查目录: assets
+2025-04-07 18:44:25 - INFO - 检查目录: maibot_versions
+2025-04-07 18:44:25 - INFO - 检查目录: logs
+2025-04-07 18:44:26 - INFO - 网络连接正常
+2025-04-07 18:44:31 - INFO - 正在克隆仓库...
+2025-04-07 18:44:33 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.6.0-alpha'...
+2025-04-07 18:44:33 - INFO - ERROR: Note: switching to '647a0c657a86ef08a2ed7af7ee70532682c8ecbe'.
+2025-04-07 18:44:33 - INFO - ERROR: 
+2025-04-07 18:44:33 - INFO - ERROR: You are in 'detached HEAD' state. You can look around, make experimental
+2025-04-07 18:44:33 - INFO - ERROR: changes and commit them, and you can discard any commits you make in this
+2025-04-07 18:44:33 - INFO - ERROR: state without impacting any branches by switching back to a branch.
+2025-04-07 18:44:33 - INFO - ERROR: 
+2025-04-07 18:44:33 - INFO - ERROR: If you want to create a new branch to retain commits you create, you may
+2025-04-07 18:44:33 - INFO - ERROR: do so (now or later) by using -c with the switch command. Example:
+2025-04-07 18:44:33 - INFO - ERROR: 
+2025-04-07 18:44:33 - INFO - ERROR: git switch -c <new-branch-name>
+2025-04-07 18:44:33 - INFO - ERROR: 
+2025-04-07 18:44:33 - INFO - ERROR: Or undo this operation with:
+2025-04-07 18:44:33 - INFO - ERROR: 
+2025-04-07 18:44:33 - INFO - ERROR: git switch -
+2025-04-07 18:44:33 - INFO - ERROR: 
+2025-04-07 18:44:33 - INFO - ERROR: Turn off this advice by setting config variable advice.detachedHead to false
+2025-04-07 18:44:33 - INFO - ERROR: 
+2025-04-07 18:44:33 - INFO - 仓库克隆成功
+2025-04-07 18:44:33 - INFO - 代码更新完成，准备配置环境...
+2025-04-07 18:44:33 - INFO - 创建虚拟环境...
+2025-04-07 18:44:37 - INFO - 升级pip...
+2025-04-07 18:44:41 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 18:44:41 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\release 0.6.0-alpha\venv\lib\site-packages (24.3.1)
+2025-04-07 18:44:41 - INFO - Collecting pip
+2025-04-07 18:44:41 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 18:44:41 - INFO - Installing collected packages: pip
+2025-04-07 18:44:41 - INFO - Attempting uninstall: pip
+2025-04-07 18:44:41 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 18:44:41 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 18:44:41 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 18:44:41 - INFO - Successfully installed pip-25.0.1
+2025-04-07 18:44:41 - INFO - 安装依赖...

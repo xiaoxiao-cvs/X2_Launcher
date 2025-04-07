@@ -1,267 +1,249 @@
 # -*- coding: utf-8 -*-
-import subprocess
 import os
 import sys
 import logging
-import signal
-import psutil
-from typing import List, Optional
-from tkinter import messagebox
+import asyncio
+import subprocess  # 添加缺失的导入
 from pathlib import Path
-import requests
+from typing import List, Optional, Dict, Any  # 添加Dict类型导入
+from packaging import version
 
-# 添加项目根目录到Python路径
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.settings import Settings  # 修改导入路径
+from .github_client import GitHubClient
+from .process_manager import ProcessManager
+from .settings import AppConfig as Settings  # 更新为新的配置类
+from .logger import logger
+from .errors import DeploymentError, GitHubAPIError, ProcessError, BotError, DependencyError
 
 class VersionController:
     def __init__(self, config=None):
         self.config = config
-        self.base_path = Path(__file__).parent.parent
-        self.bot_path = self.base_path / "bot"
         self.settings = Settings()
+        self.github = GitHubClient(config.config.get('github_token') if config else None)
+        self.process = ProcessManager()
+        
+        # 初始化路径
+        self.base_path = Path(__file__).parent.parent
         self.repo_url = self.settings.get("deployment", "repo_url")
         self.local_path = self.settings.get("deployment", "install_path")
-        # 修改资源文件路径处理
-        self.exe_dir = os.path.dirname(os.path.abspath(sys.executable))
-        python_version = self.settings.get("deployment", "python_version")
-        self.python_installer = f"python-{python_version}-amd64.exe"
-        self.python_path = os.path.join(self.exe_dir, self.python_installer)
-        self.log_callback = None  # 添加日志回调
-        self.github_token = self.config.config.get("github_token", None)  # 从配置中获取 GitHub Token
         
         # 确保目录存在
         if not os.path.exists(self.local_path):
             os.makedirs(self.local_path)
-        
+            
         self.bot_process: Optional[subprocess.Popen] = None
-        self._setup_logging()
+        self.log_callback = None
+        self.logger = logger
+        self._version_cache = {}  # 添加版本缓存
+        self.venv_cache = {}  # 添加虚拟环境缓存
 
     def set_log_callback(self, callback):
         """设置日志回调函数"""
-        self.log_callback = callback
+        self.logger.add_callback(callback)
 
     def _log(self, message, level="INFO"):
         """统一的日志处理"""
-        logging.log(getattr(logging, level), message)
-        if self.log_callback:
-            self.log_callback(message, level)
+        self.logger.log(message, level)
 
-    def _setup_logging(self):
-        logging.basicConfig(
-            filename='deploy.log',
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s'
-        )
-
-    def _get_headers(self):
-        """生成请求头，支持 GitHub Token"""
-        headers = {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'X-Deploy-Station'
-        }
-        if self.github_token:
-            headers['Authorization'] = f"token {self.github_token}"
-        return headers
-
-    def _check_repository(self) -> bool:
-        """检查仓库是否存在且可访问"""
+    async def async_get_versions(self) -> List[str]:
+        """异步获取所有版本"""
         try:
-            # 修复仓库路径解析
-            repo_path = self.repo_url.rstrip('/').replace('.git', '').split('github.com/')[-1]
-            api_url = f"https://api.github.com/repos/{repo_path}"
-            
-            headers = self._get_headers()  # 使用统一的 headers 方法
-            
-            response = requests.get(api_url, headers=headers, timeout=10)
-            response.raise_for_status()
-            
-            repo_info = response.json()
-            logging.info(f"仓库信息: {repo_info.get('full_name')}, 默认分支: {repo_info.get('default_branch')}")
-            return True
-            
-        except requests.RequestException as e:
-            logging.error(f"仓库检查失败: {e}")
-            return False
+            releases, branches = await asyncio.gather(
+                self.github.async_get_releases(self.repo_url),
+                self.github.async_get_branches(self.repo_url)
+            )
+            return self._process_versions(releases, branches)
+        except Exception as e:
+            self._log(f"版本获取失败: {str(e)}", "ERROR")
+            return ["NaN"]
 
     def get_versions(self) -> List[str]:
-        """从GitHub获取发行版列表（包含分支）"""
-        from urllib.parse import urlparse
-        from packaging import version
-        
+        """获取所有版本"""
         try:
-            # 修复仓库路径解析
-            repo_path = self.repo_url.rstrip('/').replace('.git', '').split('github.com/')[-1]
-            
-            # 获取发行版（带分页支持）
-            releases = []
-            page = 1
-            while True:
-                api_url = f"https://api.github.com/repos/{repo_path}/releases?page={page}&per_page=100"
-                headers = self._get_headers()  # 使用统一的 headers 方法
-                
-                response = requests.get(api_url, headers=headers, timeout=15)
-                response.raise_for_status()
-                
-                page_releases = response.json()
-                if not page_releases:
-                    break
-                    
-                releases.extend(page_releases)
-                page += 1
-
-            # 获取分支列表
-            branches_url = f"https://api.github.com/repos/{repo_path}/branches"
-            branches_response = requests.get(branches_url, headers=headers, timeout=15)
-            branches = branches_response.json() if branches_response.status_code == 200 else []
-
-            # 处理发行版数据
-            version_list = []
-            try:
-                for release in releases:
-                    # 过滤预发布版本
-                    if not release['prerelease']:
-                        version_list.append({
-                            'type': 'release',
-                            'name': f"Release {release['tag_name']}",
-                            'value': release['tag_name']
-                        })
-            except KeyError as e:
-                logging.error(f"发行版数据解析异常: {e}")
-
-            # 处理分支数据
-            try:
-                for branch in branches:
-                    version_list.append({
-                        'type': 'branch',
-                        'name': f"Branch {branch['name']}",
-                        'value': branch['name']
-                    })
-            except KeyError as e:
-                logging.error(f"分支数据解析异常: {e}")
-
-            # 专业版本排序
-            def sort_key(item):
-                try:
-                    return version.parse(item['value'].lstrip('v'))
-                except:
-                    return version.parse("0.0.0")
-                    
-            return sorted(
-                [item['value'] for item in version_list],
-                key=sort_key,
-                reverse=True
-            ) or ["NaN"]
-
-        except requests.RequestException as e:
-            logging.error(f"API请求失败: {e}")
-            messagebox.showwarning("连接超时", "无法连接到GitHub服务器，请检查网络连接")
+            releases = self.github.get_releases(self.repo_url)
+            branches = self.github.get_branches(self.repo_url)
+            return self._process_versions(releases, branches)
+        except GitHubAPIError as e:
+            self.logger.log(f"API访问失败: {e}", "ERROR")
             return ["NaN"]
         except Exception as e:
-            logging.error(f"版本获取失败: {str(e)}", exc_info=True)
+            self.logger.log(f"版本获取失败: {e}", "ERROR")
             return ["NaN"]
 
+    def _process_versions(self, releases: List[Dict[str, Any]], branches: List[Dict[str, Any]]) -> List[str]:
+        """提取出来的版本处理逻辑"""
+        version_list = []
+        
+        # 处理发行版
+        version_list.extend(
+            f"Release {r['tag_name']}" 
+            for r in releases 
+            if not r['prerelease']
+        )
+        
+        # 处理分支
+        version_list.extend(
+            f"Branch {b['name']}" 
+            for b in branches
+        )
+        
+        # 缓存版本信息
+        self._update_version_cache(releases, branches)
+        
+        return sorted(
+            version_list,
+            key=self._version_key,
+            reverse=True
+        ) or ["NaN"]
+
+    def _update_version_cache(self, releases: List[Dict[str, Any]], branches: List[Dict[str, Any]]) -> None:
+        """更新版本缓存"""
+        self._version_cache.clear()
+        
+        # 缓存发行版
+        for release in releases:
+            if not release['prerelease']:
+                key = f"Release {release['tag_name']}"
+                self._version_cache[key] = release
+        
+        # 缓存分支
+        for branch in branches:
+            key = f"Branch {branch['name']}"
+            self._version_cache[key] = branch
+
+    @staticmethod
+    def _version_key(version_str: str) -> version.Version:
+        """专业版本排序"""
+        try:
+            # 提取版本号并解析
+            version_part = version_str.split()[-1].lstrip('v')
+            return version.parse(version_part)
+        except:
+            return version.parse("0.0.0")
+
+    def get_version_info(self, version_str: str) -> Optional[Dict]:
+        """获取指定版本的详细信息"""
+        return self._version_cache.get(version_str)
+
     def clone_version(self, version: str) -> bool:
+        """克隆版本并设置环境"""
         try:
             target_path = os.path.join(self.local_path, version)
+            success = False
+            
+            # 1. 首先执行Git操作
             if os.path.exists(target_path):
                 self._log("正在更新仓库...")
-                process = subprocess.Popen(
-                    ["git", "pull"],
-                    cwd=target_path,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-                )
+                success = self._update_repository(target_path)
             else:
                 self._log("正在克隆仓库...")
-                os.makedirs(target_path)
-                process = subprocess.Popen(
-                    ["git", "clone", "-b", version, "--depth", "1", self.repo_url, target_path],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-                )
-
-            # 实时输出日志
-            while True:
-                output = process.stdout.readline()
-                error = process.stderr.readline()
-                
-                if output:
-                    self._log(output.strip())
-                if error:
-                    self._log(error.strip(), "ERROR")
-                    
-                if process.poll() is not None:
-                    break
-
-            if process.returncode == 0:
-                self._log("代码更新完成，正在安装依赖...")
-                
-                # 安装依赖
-                requirements_path = os.path.join(target_path, "requirements.txt")
-                if os.path.exists(requirements_path):
-                    pip_process = subprocess.Popen(
-                        [sys.executable, "-m", "pip", "install", "-r", requirements_path],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True,
-                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-                    )
-                    
-                    # 实时输出pip安装日志
-                    while True:
-                        output = pip_process.stdout.readline()
-                        error = pip_process.stderr.readline()
-                        
-                        if output:
-                            self._log(output.strip())
-                        if error:
-                            self._log(error.strip(), "WARNING")
-                            
-                        if pip_process.poll() is not None:
-                            break
-                    
-                    if pip_process.returncode == 0:
-                        self._log("依赖安装完成")
-                        return True
-                    else:
-                        raise Exception("依赖安装失败")
-                return True
+                success = self._clone_repository(version, target_path)
+            
+            # 2. 只有在Git操作成功后才创建虚拟环境
+            if success:
+                self._log("代码更新完成，准备配置环境...")
+                return self._setup_virtual_env(target_path, version)
             else:
-                raise Exception("代码更新/克隆失败")
+                self._log("代码获取失败，跳过环境配置", "ERROR")
+                return False
                 
         except Exception as e:
             self._log(f"部署失败: {str(e)}", "ERROR")
             return False
 
-    def install_python(self) -> bool:
+    def _clone_repository(self, version: str, target_path: str) -> bool:
+        """克隆仓库"""
         try:
-            if os.path.exists(self.python_path):
-                print(f"正在安装Python: {self.python_path}")
-                subprocess.run(
-                    [self.python_path, "/quiet", "InstallAllUsers=1", "PrependPath=1"],
-                    check=True,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
+            # 提取真实的分支/标签名（移除"Release"或"Branch"前缀）
+            branch_name = version.split(" ")[-1]
+            
+            # 执行git clone命令
+            for output in self.process.run_command(
+                ["git", "clone", "-b", branch_name, "--depth", "1", self.repo_url, target_path],
+                realtime_output=True
+            ):
+                self._log(output)
+            
+            # 检查目标目录是否存在
+            if os.path.exists(target_path) and os.path.isdir(target_path):
+                self._log("仓库克隆成功")
                 return True
             else:
-                error_msg = f"Python安装包不存在: {self.python_path}"
-                print(error_msg)
-                messagebox.showerror("错误", error_msg)
+                self._log("仓库克隆失败：目标目录不存在", "ERROR")
                 return False
+                
         except Exception as e:
-            error_msg = f"Python安装失败: {str(e)}"
-            print(error_msg)
-            messagebox.showerror("错误", error_msg)
+            self._log(f"克隆仓库失败: {str(e)}", "ERROR")
+            return False
+
+    def _update_repository(self, target_path: str) -> bool:
+        """更新仓库"""
+        try:
+            # 执行git pull命令
+            for output in self.process.run_command(
+                ["git", "pull"],
+                cwd=target_path,
+                realtime_output=True
+            ):
+                self._log(output)
+            
+            # 只要git pull命令成功执行就返回True
+            return True
+                
+        except Exception as e:
+            self._log(f"更新仓库失败: {str(e)}", "ERROR")
+            return False
+
+    def _setup_virtual_env(self, target_path: str, version: str) -> bool:
+        """设置虚拟环境"""
+        try:
+            venv_path = os.path.join(target_path, 'venv')
+            requirements_path = os.path.join(target_path, "requirements.txt")
+            
+            # 获取虚拟环境中的Python路径
+            python_path = os.path.join(
+                venv_path, 
+                'Scripts' if os.name == 'nt' else 'bin',
+                'python' + ('.exe' if os.name == 'nt' else '')
+            )
+            
+            # 如果虚拟环境不存在,创建它
+            if not os.path.exists(venv_path):
+                self._log("创建虚拟环境...")
+                for output in self.process.run_command(
+                    [sys.executable, "-m", "venv", venv_path],
+                    realtime_output=True
+                ):
+                    self._log(output)
+            
+            # 升级pip并实时显示输出
+            self._log("升级pip...")
+            for output in self.process.run_command(
+                [python_path, "-m", "pip", "install", "--upgrade", "pip"],
+                realtime_output=True
+            ):
+                self._log(output)
+            
+            # 安装依赖并实时显示输出
+            if os.path.exists(requirements_path):
+                self._log("安装依赖...")
+                # 增加pip命令的详细输出参数
+                for output in self.process.run_command(
+                    [python_path, "-m", "pip", "install", "-r", requirements_path, "-v"],
+                    realtime_output=True
+                ):
+                    if output.strip():  # 只输出非空行
+                        self._log(output)
+            
+            # 缓存虚拟环境路径
+            self.venv_cache[version] = venv_path
+            return True
+            
+        except Exception as e:
+            self._log(f"虚拟环境设置失败: {e}", "ERROR")
             return False
 
     def start_bot(self, version: str) -> bool:
+        """使用虚拟环境启动机器人"""
         try:
             if self.bot_process:
                 self.stop_bot()
@@ -269,35 +251,26 @@ class VersionController:
             bot_path = os.path.join(self.local_path, version)
             if not os.path.exists(os.path.join(bot_path, "bot.py")):
                 raise FileNotFoundError("bot.py not found")
+            
+            # 使用虚拟环境的Python
+            python_path = os.path.join(
+                self.venv_cache.get(version, os.path.join(bot_path, 'venv')),
+                'Scripts' if os.name == 'nt' else 'bin',
+                'python' + ('.exe' if os.name == 'nt' else '')
+            )
                 
             self.bot_process = subprocess.Popen(
-                [sys.executable, "bot.py"],
+                [python_path, "bot.py"],
                 cwd=bot_path,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             return True
         except Exception as e:
-            logging.error(f"启动机器人失败: {e}")
+            self._log(f"启动失败: {str(e)}", "ERROR")
             return False
 
     def stop_bot(self) -> bool:
-        try:
-            if self.bot_process:
-                if os.name == 'nt':
-                    self._kill_process_tree(self.bot_process.pid)
-                else:
-                    os.killpg(os.getpgid(self.bot_process.pid), signal.SIGTERM)
-                self.bot_process = None
-            return True
-        except Exception as e:
-            logging.error(f"停止机器人失败: {e}")
-            return False
-
-    def _kill_process_tree(self, pid):
-        try:
-            parent = psutil.Process(pid)
-            for child in parent.children(recursive=True):
-                child.kill()
-            parent.kill()
-        except psutil.NoSuchProcess:
-            pass
+        """停止机器人"""
+        if self.bot_process:
+            return self.process.kill_process_tree(self.bot_process.pid)
+        return True

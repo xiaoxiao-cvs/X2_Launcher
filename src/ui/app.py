@@ -8,74 +8,101 @@ from PIL import Image
 import asyncio
 import threading
 import uvicorn
+import queue
+from typing import Tuple, Optional
 
 from ..config import Config
-from ..settings import Settings
+from ..settings import AppConfig as Settings  # 更新为新的配置类
 from ..version_manager import VersionController
 from ..backend import app as backend_app
 from .components import SettingsWindow
+from ..logger import logger
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
+        self._init_services()
+        self.title("𝕏² Deploy Station")
+        self.setup_window()
+        self.setup_ui()
         
-        # 初始化样式
+        # 初始化完成后立即刷新版本列表
+        self.after(100, self._init_versions)
+        
+        # 添加消息队列
+        self.log_queue = queue.Queue()
+        self.status_queue = queue.Queue()
+        
+        # 启动队列处理
+        self.after(100, self.process_queues)
+        
+    def _init_services(self):
+        """初始化基础服务"""
         self.style = ttk.Style()
-        
-        # 初始化基本服务
         self.settings = Settings()
         self.config = Config()
         self.controller = VersionController(self.config)
         self.thread_pool = ThreadPoolExecutor(max_workers=3)
         self.is_busy = False
-        self.loop = asyncio.get_event_loop()
         
-        # 设置基本窗口属性
-        self.title("𝕏² Deploy Station")
-        self.setup_window()
-        
-        # 初始化UI组件
-        self.setup_ui()
-        self.init_services()
-
-    def init_services(self):
-        """初始化后端服务"""
-        self.controller.set_log_callback(self._log_message_handler)
+        # 设置回调和后端
+        self.controller.set_log_callback(self.log_callback)
         backend_app.init_controller(self.config)
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.after(100, self.refresh_versions)
         self.start_backend()
+        # 注册日志回调
+        logger.add_callback(self.log_callback)
+
+    def _init_versions(self):
+        """初始化版本列表"""
+        def fetch_versions():
+            try:
+                versions = self.controller.get_versions()
+                if versions and versions[0] != "NaN":
+                    self.after(0, lambda: self.version_combobox.configure(values=versions))
+                    self.after(0, lambda: self.version_combobox.set(versions[0]))
+                else:
+                    self.after(0, lambda: self.version_combobox.configure(values=["暂无可用版本"]))
+            except Exception as e:
+                logging.error(f"版本列表获取失败: {e}")
+                self.after(0, lambda: self.version_combobox.configure(values=["加载失败"]))
+        
+        self.thread_pool.submit(fetch_versions)
 
     def setup_window(self):
-        """设置窗口基本属性"""
-        size = self.settings.get("appearance", "window_size")
-        self.geometry(size)
-        self.minsize(800, 450)
-        
-        # 设置背景
-        self.bg_image = None
+        """设置窗口属性和背景"""
+        try:
+            size = self.settings.get("appearance", "window_size")
+            self.geometry(size)
+            self.minsize(800, 450)
+            self._setup_background()
+        except Exception as e:
+            logging.error(f"窗口设置失败: {e}")
+            
+    def _setup_background(self):
+        """设置背景图片"""
         bg_path = self.settings.get("appearance", "background_image")
-        if os.path.exists(bg_path):
-            try:
-                image = Image.open(bg_path)
-                self.bg_image = ctk.CTkImage(
-                    light_image=image,
-                    dark_image=image,
-                    size=(1280, 720)
-                )
-                self.bg_label = ctk.CTkLabel(
-                    self,
-                    image=self.bg_image,
-                    text=""
-                )
-                self.bg_label.place(relx=0, rely=0, relwidth=1, relheight=1)
-            except Exception as e:
-                logging.error(f"背景图片加载失败: {e}")
+        if not os.path.exists(bg_path):
+            return
+            
+        try:
+            image = Image.open(bg_path)
+            self.bg_image = ctk.CTkImage(
+                light_image=image,
+                dark_image=image,
+                size=(1280, 720)
+            )
+            ctk.CTkLabel(
+                self,
+                image=self.bg_image,
+                text=""
+            ).place(relx=0, rely=0, relwidth=1, relheight=1)
+        except Exception as e:
+            logging.error(f"背景图片加载失败: {e}")
 
     def setup_ui(self):
         """设置UI组件"""
         # 避免阻塞的UI初始化
-        self.after(0, self._create_ui_components)
+        self.after(1, self._create_ui_components)
 
     def _create_ui_components(self):
         """实际创建UI组件的方法"""
@@ -102,10 +129,11 @@ class App(ctk.CTk):
 
     def setup_styles(self):
         """设置界面样式"""
-        transparency = self.settings.get("appearance", "transparency")
-        accent_color = self.settings.get("appearance", "accent_color")
         try:
+            transparency = float(self.settings.get("appearance", "transparency"))
+            accent_color = self.settings.get("appearance", "accent_color")
             rgb = self._adjust_color(accent_color, transparency)
+            
             self.style.configure(
                 "Modern.Horizontal.TProgressbar",
                 troughcolor="#2b2b2b",
@@ -114,6 +142,7 @@ class App(ctk.CTk):
             )
         except Exception as e:
             logging.error(f"设置样式失败: {e}")
+            # 使用默认样式
             self.style.configure(
                 "Modern.Horizontal.TProgressbar",
                 troughcolor="#2b2b2b",
@@ -121,30 +150,48 @@ class App(ctk.CTk):
                 thickness=10
             )
 
+    def _adjust_color(self, color_hex: str, transparency: float) -> tuple:
+        """调整颜色透明度"""
+        try:
+            # 移除井号并转换为RGB
+            color = color_hex.lstrip('#')
+            rgb = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+            
+            # 根据透明度调整
+            adjusted = tuple(int(c * float(transparency)) for c in rgb)
+            return adjusted
+        except Exception as e:
+            logging.error(f"颜色调整失败: {e}")
+            return (30, 144, 255)  # 返回默认蓝色
+
     def _log_message_handler(self, message, level="INFO"):
-        """内部日志处理方法"""
-        if hasattr(self, 'log_text'):  # 确保UI已初始化
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            log_entry = f"[{timestamp}] [{level}] {message}\n"
-            self.log_text.insert("end", log_entry)
-            self.log_text.see("end")
-        logging.info(message)
+        """处理日志消息"""
+        if hasattr(self, 'log_text'):
+            try:
+                self.log_text.insert("end", f"{message}\n")
+                self.log_text.see("end")
+            except Exception as e:
+                print(f"UI日志更新失败: {e}")
 
     def start_backend(self):
-        def run_server():
+        """启动后端服务"""
+        async def start_server():
+            config = uvicorn.Config(
+                backend_app.app,
+                host="127.0.0.1",
+                port=8000,
+                log_level="error"
+            )
+            server = uvicorn.Server(config)
+            await server.serve()
+            
+        def run():
             try:
-                config = uvicorn.Config(
-                    backend_app.app,
-                    host="127.0.0.1",
-                    port=8000,
-                    log_level="error"
-                )
-                server = uvicorn.Server(config)
-                self.loop.run_until_complete(server.serve())
+                self.loop.run_until_complete(start_server())
             except Exception as e:
                 self.log_message(f"后端服务器启动失败: {e}", "ERROR")
-        
-        threading.Thread(target=run_server, daemon=True).start()
+                
+        threading.Thread(target=run, daemon=True).start()
 
     def create_settings_button(self):
         """创建设置按钮"""
@@ -178,8 +225,9 @@ class App(ctk.CTk):
         
         self.version_combobox = ctk.CTkComboBox(
             self.version_frame,
-            values=["加载中..."],
-            width=200
+            values=["正在加载..."],
+            width=200,
+            state="readonly"  # 添加只读状态
         )
         self.version_combobox.pack(side="left", padx=10)
 
@@ -231,26 +279,35 @@ class App(ctk.CTk):
         """刷新版本列表"""
         try:
             versions = self.controller.get_versions()
+            if not versions:
+                versions = ["暂无可用版本"]
             self.version_combobox.configure(values=versions)
-            if versions and versions[0] != "NaN":
-                self.version_combobox.set(versions[0])
+            self.version_combobox.set(versions[0])
         except Exception as e:
             self.log_message(f"刷新版本列表失败: {e}", "ERROR")
+            self.version_combobox.configure(values=["加载失败"])
 
     def deploy_selected_version(self):
-        """部署选中的版本"""
+        """改进的部署方法"""
         if self.is_busy:
             return
+            
         version = self.version_combobox.get()
         self.is_busy = True
-        self.loading_label.configure(text="正在部署...")
+        self.set_status("正在部署...")
         
         def deploy():
             try:
                 success = self.controller.clone_version(version)
-                self.after(0, lambda: self.deployment_complete(success))
+                if success:
+                    self.set_status("", None)
+                    messagebox.showinfo("成功", "部署完成")
+                else:
+                    self.set_status("", "部署失败")
             except Exception as e:
-                self.after(0, lambda: self.deployment_complete(False, str(e)))
+                self.set_status("", f"部署异常: {str(e)}")
+            finally:
+                self.is_busy = False
         
         self.thread_pool.submit(deploy)
 
@@ -274,16 +331,97 @@ class App(ctk.CTk):
         else:
             self.log_message("机器人启动失败", "ERROR")
 
-    def on_closing(self):
-        """处理窗口关闭事件"""
-        if messagebox.askokcancel("退出", "确定要退出程序吗?"):
-            self.controller.stop_bot()
-            self.thread_pool.shutdown(wait=False)
-            self.quit()
-            self.destroy()
-
     def log_message(self, message, level="INFO"):
         """添加日志消息"""
         if hasattr(self, 'log_text'):
             self.log_text.insert("end", f"[{level}] {message}\n")
             self.log_text.see("end")
+
+    def safe_quit(self):
+        """安全退出应用"""
+        try:
+            # 停止所有活动进程
+            if hasattr(self, 'controller'):
+                self.controller.stop_bot()
+                
+            # 停止后端服务
+            if hasattr(self, 'backend_server'):
+                self.backend_server.should_exit = True
+                
+            # 清理线程池
+            if hasattr(self, 'thread_pool'):
+                self.thread_pool.shutdown(wait=False)
+                
+            # 保存配置
+            if hasattr(self, 'settings'):
+                self.settings.save()
+                
+            # 退出应用
+            self.quit()
+            self.destroy()
+            
+        except Exception as e:
+            logger.log(f"退出时发生错误: {e}", "ERROR")
+            self.quit()
+            self.destroy()
+
+    def process_queues(self):
+        """处理所有队列消息"""
+        try:
+            # 处理日志队列
+            self._process_log_queue()
+            # 处理状态队列
+            self._process_status_queue()
+            
+            # 继续监听队列
+            self.after(100, self.process_queues)
+        except Exception as e:
+            logger.log(f"队列处理失败: {e}", "ERROR")
+            self.after(100, self.process_queues)
+
+    def _process_log_queue(self):
+        """处理日志队列"""
+        while not self.log_queue.empty():
+            try:
+                message, level = self.log_queue.get_nowait()
+                self.update_log_ui(message, level)
+            except queue.Empty:
+                break
+
+    def _process_status_queue(self):
+        """处理状态队列"""
+        while not self.status_queue.empty():
+            try:
+                status = self.status_queue.get_nowait()
+                self.update_status_ui(status)
+            except queue.Empty:
+                break
+
+    def update_log_ui(self, message: str, level: str):
+        """更新日志UI"""
+        try:
+            if hasattr(self, 'log_text'):
+                self.log_text.insert("end", f"[{level}] {message}\n")
+                self.log_text.see("end")
+        except Exception as e:
+            print(f"UI日志更新失败: {e}")
+
+    def update_status_ui(self, status: Tuple[str, Optional[str]]):
+        """更新状态UI"""
+        try:
+            message, error = status
+            if hasattr(self, 'loading_label'):
+                self.loading_label.configure(text=message)
+            if error and hasattr(self, 'is_busy'):
+                self.is_busy = False
+                messagebox.showerror("错误", error)
+        except Exception as e:
+            print(f"UI状态更新失败: {e}")
+
+    def log_callback(self, message: str, level: str = "INFO"):
+        """线程安全的日志回调"""
+        self.log_queue.put((message, level))
+
+    def set_status(self, message: str, error: Optional[str] = None):
+        """线程安全的状态更新"""
+        self.status_queue.put((message, error))

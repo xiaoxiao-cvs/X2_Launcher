@@ -1,0 +1,15 @@
+{
+    "appearance": {
+        "background_image": "assets\\background.jpg",
+        "transparency": 0.7,
+        "theme": "dark",
+        "accent_color": "#1E90FF",
+        "window_size": "1280x720"
+    },
+    "deployment": {
+        "auto_check_update": true,
+        "python_version": "3.13.0",
+        "install_path": "maibot_versions",
+        "repo_url": "https://github.com/MaiM-with-u/MaiBot.git"
+    }
+}
