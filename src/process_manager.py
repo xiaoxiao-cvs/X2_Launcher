@@ -4,7 +4,7 @@ import signal
 import psutil
 import subprocess
 import logging
-from typing import Generator, Tuple, Optional
+from typing import Generator, Tuple, Optional, List
 from .logger import logger
 
 class ProcessManager:
@@ -13,11 +13,11 @@ class ProcessManager:
 
     def run_command(
         self, 
-        cmd: list, 
-        cwd: str = None, 
+        cmd: List[str], 
+        cwd: Optional[str] = None, 
         realtime_output: bool = False
-    ) -> Generator[str, None, int] | Tuple[bool, str]:
-        """执行命令并处理输出"""
+    ) -> Generator[str, None, None]:
+        """执行命令并实时返回输出"""
         try:
             process = subprocess.Popen(
                 cmd,
@@ -32,50 +32,36 @@ class ProcessManager:
             
             self.active_processes[process.pid] = process
             
-            if realtime_output:
-                return self._handle_realtime_output(process)
-            else:
-                return self._handle_normal_output(process)
+            # 实时读取输出
+            while True:
+                # 读取一行输出
+                output = process.stdout.readline() if process.stdout else ''
+                error = process.stderr.readline() if process.stderr else ''
                 
+                # 如果都没有输出且进程结束，就退出循环
+                if not output and not error and process.poll() is not None:
+                    break
+                    
+                # 返回输出
+                if output:
+                    yield output.strip()
+                if error:
+                    yield f"ERROR: {error.strip()}"
+                    
+            # 检查最终状态
+            if process.poll() != 0:
+                remaining_error = process.stderr.read() if process.stderr else ''
+                if remaining_error:
+                    yield f"ERROR: {remaining_error.strip()}"
+            
+            # 等待进程完成
+            process.wait()
+            
         except Exception as e:
-            logger.log(f"命令执行失败: {e}", "ERROR")
-            return (False, str(e))
+            yield f"ERROR: 命令执行失败: {str(e)}"
         finally:
             if process.pid in self.active_processes:
                 del self.active_processes[process.pid]
-
-    def _handle_realtime_output(self, process: subprocess.Popen) -> Generator[str, None, int]:
-        """处理实时输出"""
-        try:
-            while True:
-                stdout_line = process.stdout.readline()
-                stderr_line = process.stderr.readline()
-                
-                if stdout_line:
-                    yield stdout_line.strip()
-                if stderr_line:
-                    yield f"ERROR: {stderr_line.strip()}"
-                    
-                if not stdout_line and not stderr_line and process.poll() is not None:
-                    break
-                    
-            return process.returncode
-            
-        except Exception as e:
-            logger.log(f"输出处理失败: {e}", "ERROR")
-            return 1
-
-    def _handle_normal_output(self, process: subprocess.Popen) -> Tuple[bool, str]:
-        """处理普通输出"""
-        try:
-            stdout, stderr = process.communicate()
-            success = process.returncode == 0
-            output = stdout if success else stderr
-            return success, output.strip()
-            
-        except Exception as e:
-            logger.log(f"输出处理失败: {e}", "ERROR")
-            return False, str(e)
 
     def kill_process_tree(self, pid: int) -> bool:
         """终止进程树"""

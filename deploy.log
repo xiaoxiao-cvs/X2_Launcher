@@ -235,3 +235,294 @@ RuntimeError: main thread is not in main loop
 2025-04-07 18:44:41 - INFO - Successfully uninstalled pip-24.3.1
 2025-04-07 18:44:41 - INFO - Successfully installed pip-25.0.1
 2025-04-07 18:44:41 - INFO - 安装依赖...
+2025-04-07 20:23:40 - INFO - 检查目录: assets
+2025-04-07 20:23:40 - INFO - 检查目录: maibot_versions
+2025-04-07 20:23:40 - INFO - 检查目录: logs
+2025-04-07 20:23:41 - INFO - 网络连接正常
+2025-04-07 20:23:49 - INFO - 正在克隆仓库...
+2025-04-07 20:23:55 - INFO - ERROR: Cloning into 'maibot_versions\Branch main'...
+2025-04-07 20:23:55 - INFO - 仓库克隆成功
+2025-04-07 20:23:55 - INFO - 代码更新完成，准备配置环境...
+2025-04-07 20:23:55 - INFO - 创建虚拟环境...
+2025-04-07 20:23:58 - INFO - 升级pip...
+2025-04-07 20:24:02 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 20:24:02 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\branch main\venv\lib\site-packages (24.3.1)
+2025-04-07 20:24:02 - INFO - Collecting pip
+2025-04-07 20:24:02 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 20:24:02 - INFO - Installing collected packages: pip
+2025-04-07 20:24:02 - INFO - Attempting uninstall: pip
+2025-04-07 20:24:02 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 20:24:02 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 20:24:02 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 20:24:02 - INFO - Successfully installed pip-25.0.1
+2025-04-07 20:24:02 - INFO - 安装依赖...
+2025-04-07 20:30:43 - INFO - 检查目录: assets
+2025-04-07 20:30:43 - INFO - 检查目录: maibot_versions
+2025-04-07 20:30:43 - INFO - 检查目录: logs
+2025-04-07 20:30:44 - INFO - 网络连接正常
+2025-04-07 20:30:54 - INFO - 正在克隆仓库...
+2025-04-07 20:30:56 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.6.0-alpha'...
+2025-04-07 20:30:56 - INFO - ERROR: Note: switching to '647a0c657a86ef08a2ed7af7ee70532682c8ecbe'.
+2025-04-07 20:30:56 - INFO - ERROR: 
+2025-04-07 20:30:56 - INFO - ERROR: You are in 'detached HEAD' state. You can look around, make experimental
+2025-04-07 20:30:56 - INFO - ERROR: changes and commit them, and you can discard any commits you make in this
+2025-04-07 20:30:56 - INFO - ERROR: state without impacting any branches by switching back to a branch.
+2025-04-07 20:30:56 - INFO - ERROR: 
+2025-04-07 20:30:56 - INFO - ERROR: If you want to create a new branch to retain commits you create, you may
+2025-04-07 20:30:56 - INFO - ERROR: do so (now or later) by using -c with the switch command. Example:
+2025-04-07 20:30:56 - INFO - ERROR: 
+2025-04-07 20:30:56 - INFO - ERROR: git switch -c <new-branch-name>
+2025-04-07 20:30:56 - INFO - ERROR: 
+2025-04-07 20:30:56 - INFO - ERROR: Or undo this operation with:
+2025-04-07 20:30:56 - INFO - ERROR: 
+2025-04-07 20:30:56 - INFO - ERROR: git switch -
+2025-04-07 20:30:56 - INFO - ERROR: 
+2025-04-07 20:30:56 - INFO - ERROR: Turn off this advice by setting config variable advice.detachedHead to false
+2025-04-07 20:30:56 - INFO - ERROR: 
+2025-04-07 20:30:56 - INFO - 仓库克隆成功
+2025-04-07 20:30:56 - INFO - 代码更新完成，准备配置环境...
+2025-04-07 20:30:56 - INFO - 创建虚拟环境...
+2025-04-07 20:30:59 - INFO - 升级pip...
+2025-04-07 20:31:04 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 20:31:04 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\release 0.6.0-alpha\venv\lib\site-packages (24.3.1)
+2025-04-07 20:31:04 - INFO - Collecting pip
+2025-04-07 20:31:04 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 20:31:04 - INFO - Installing collected packages: pip
+2025-04-07 20:31:04 - INFO - Attempting uninstall: pip
+2025-04-07 20:31:04 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 20:31:04 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 20:31:04 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 20:31:04 - INFO - Successfully installed pip-25.0.1
+2025-04-07 20:31:04 - INFO - 安装依赖...
+2025-04-07 20:56:10 - INFO - 检查目录: assets
+2025-04-07 20:56:10 - INFO - 检查目录: maibot_versions
+2025-04-07 20:56:10 - INFO - 检查目录: logs
+2025-04-07 20:56:11 - WARNING - 网络连接异常
+2025-04-07 20:56:12 - ERROR - 发行版获取失败: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/MaiM-with-u/MaiBot/releases?page=1&per_page=100
+2025-04-07 20:56:19 - INFO - 开始部署版本: Branch main
+2025-04-07 20:56:19 - INFO - 目标路径: maibot_versions\Branch main
+2025-04-07 20:56:19 - INFO - 未找到现有仓库，开始克隆...
+2025-04-07 20:56:19 - INFO - 正在克隆分支/标签: main
+2025-04-07 20:56:37 - INFO - ERROR: Cloning into 'maibot_versions\Branch main'...
+2025-04-07 20:56:37 - INFO - 仓库克隆成功到: maibot_versions\Branch main
+2025-04-07 20:56:37 - INFO - 代码操作成功，准备配置环境...
+2025-04-07 20:56:37 - INFO - 虚拟环境路径: maibot_versions\Branch main\venv
+2025-04-07 20:56:37 - INFO - Python路径: maibot_versions\Branch main\venv\Scripts\python.exe
+2025-04-07 20:56:37 - INFO - 依赖文件路径: maibot_versions\Branch main\requirements.txt
+2025-04-07 20:56:37 - INFO - 正在创建虚拟环境...
+2025-04-07 20:56:41 - INFO - 正在升级pip...
+2025-04-07 20:56:45 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 20:56:45 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\branch main\venv\lib\site-packages (24.3.1)
+2025-04-07 20:56:45 - INFO - Collecting pip
+2025-04-07 20:56:45 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 20:56:45 - INFO - Installing collected packages: pip
+2025-04-07 20:56:45 - INFO - Attempting uninstall: pip
+2025-04-07 20:56:45 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 20:56:45 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 20:56:45 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 20:56:45 - INFO - Successfully installed pip-25.0.1
+2025-04-07 20:56:45 - INFO - 正在安装依赖...
+2025-04-07 21:01:07 - INFO - 检查目录: assets
+2025-04-07 21:01:07 - INFO - 检查目录: maibot_versions
+2025-04-07 21:01:07 - INFO - 检查目录: logs
+2025-04-07 21:01:08 - INFO - 网络连接正常
+2025-04-07 21:01:09 - ERROR - 发行版获取失败: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/MaiM-with-u/MaiBot/releases?page=1&per_page=100
+2025-04-07 21:01:34 - INFO - 开始部署版本: Branch main
+2025-04-07 21:01:34 - INFO - 目标路径: maibot_versions\Branch main
+2025-04-07 21:01:34 - INFO - 未找到现有仓库，开始克隆...
+2025-04-07 21:01:34 - INFO - 正在克隆分支/标签: main
+2025-04-07 21:01:39 - INFO - ERROR: Cloning into 'maibot_versions\Branch main'...
+2025-04-07 21:01:39 - INFO - 仓库克隆成功到: maibot_versions\Branch main
+2025-04-07 21:01:39 - INFO - 代码操作成功，准备配置环境...
+2025-04-07 21:01:39 - INFO - 虚拟环境路径: maibot_versions\Branch main\venv
+2025-04-07 21:01:39 - INFO - Python路径: maibot_versions\Branch main\venv\Scripts\python.exe
+2025-04-07 21:01:39 - INFO - 依赖文件路径: maibot_versions\Branch main\requirements.txt
+2025-04-07 21:01:39 - INFO - 正在创建虚拟环境...
+2025-04-07 21:01:43 - INFO - 正在升级pip...
+2025-04-07 21:01:46 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 21:01:46 - INFO - Requirement already satisfied: pip in d:\桌面\x-deploy-station\maibot_versions\branch main\venv\lib\site-packages (24.3.1)
+2025-04-07 21:01:46 - INFO - Collecting pip
+2025-04-07 21:01:46 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl (1.8 MB)
+2025-04-07 21:01:46 - INFO - Installing collected packages: pip
+2025-04-07 21:01:46 - INFO - Attempting uninstall: pip
+2025-04-07 21:01:46 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 21:01:46 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 21:01:46 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 21:01:46 - INFO - Successfully installed pip-25.0.1
+2025-04-07 21:01:46 - INFO - 正在安装依赖...
+2025-04-07 21:01:46 - INFO - 尝试使用镜像源: https://mirrors.aliyun.com/pypi/simple/
+2025-04-07 21:02:09 - INFO - Using pip 25.0.1 from D:\桌面\X-Deploy-Station\maibot_versions\Branch main\venv\Lib\site-packages\pip (python 3.13)
+2025-04-07 21:02:09 - INFO - ERROR: WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ConnectTimeoutError(<pip._vendor.urllib3.connection.HTTPSConnection object at 0x0000023EC99B01A0>, 'Connection to mirrors.aliyun.com timed out. (connect timeout=60.0)')': /pypi/simple/pymongo/
+2025-04-07 21:02:14 - INFO - Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+2025-04-07 21:02:14 - INFO - ERROR: Running command pip subprocess to install build dependencies
+2025-04-07 21:02:15 - INFO - Collecting pymongo (from -r maibot_versions\Branch main\requirements.txt (line 1))
+2025-04-07 21:02:15 - INFO - ERROR: Using pip 25.0.1 from D:\桌面\X-Deploy-Station\maibot_versions\Branch main\venv\Lib\site-packages\pip (python 3.13)
+2025-04-07 21:02:16 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/77/f3/023f12ee9028f341880016fd6251255bf755f70730440ad11bf745f5f9e4/pymongo-4.11.3-cp313-cp313-win_amd64.whl (932 kB)
+2025-04-07 21:02:16 - INFO - ERROR: Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+2025-04-07 21:02:16 - INFO - -------------------------------------- 932.9/932.9 kB 7.4 MB/s eta 0:00:00
+2025-04-07 21:02:16 - INFO - ERROR: Collecting setuptools>=40.8.0
+2025-04-07 21:02:16 - INFO - Collecting python-dotenv (from -r maibot_versions\Branch main\requirements.txt (line 2))
+2025-04-07 21:02:16 - INFO - ERROR: Downloading https://mirrors.aliyun.com/pypi/packages/54/21/f43f0a1fa8b06b32812e0975981f4677d28e0f3271601dc88ac5a5b83220/setuptools-78.1.0-py3-none-any.whl (1.3 MB)
+2025-04-07 21:02:16 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl (20 kB)
+2025-04-07 21:02:16 - INFO - ERROR: ---------------------------------------- 1.3/1.3 MB 6.7 MB/s eta 0:00:00
+2025-04-07 21:02:16 - INFO - Collecting pydantic (from -r maibot_versions\Branch main\requirements.txt (line 3))
+2025-04-07 21:02:16 - INFO - ERROR: Installing collected packages: setuptools
+2025-04-07 21:02:18 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/bf/c2/0f3baea344d0b15e35cb3e04ad5b953fa05106b76efbf4c782a3f47f22f5/pydantic-2.11.2-py3-none-any.whl (443 kB)
+2025-04-07 21:02:18 - INFO - ERROR: Successfully installed setuptools-78.1.0
+2025-04-07 21:02:18 - INFO - Collecting jieba (from -r maibot_versions\Branch main\requirements.txt (line 4))
+2025-04-07 21:02:18 - INFO - ERROR: Running command Getting requirements to build wheel
+2025-04-07 21:02:18 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/c6/cb/18eeb235f833b726522d7ebed54f2278ce28ba9438e3135ab0278d9792a2/jieba-0.42.1.tar.gz (19.2 MB)
+2025-04-07 21:02:18 - INFO - ERROR: C:\Users\筱\AppData\Local\Temp\pip-build-env-1ls6xbqg\overlay\Lib\site-packages\setuptools\dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+2025-04-07 21:02:18 - INFO - ---------------------------------------- 19.2/19.2 MB 5.7 MB/s eta 0:00:00
+2025-04-07 21:02:18 - INFO - ERROR: !!
+2025-04-07 21:02:18 - INFO - Installing build dependencies: started
+2025-04-07 21:02:18 - INFO - ERROR: 
+2025-04-07 21:02:18 - INFO - Installing build dependencies: finished with status 'done'
+2025-04-07 21:02:18 - INFO - ERROR: ********************************************************************************
+2025-04-07 21:02:18 - INFO - Getting requirements to build wheel: started
+2025-04-07 21:02:18 - INFO - ERROR: Please consider removing the following classifiers in favor of a SPDX license expression:
+2025-04-07 21:02:18 - INFO - Getting requirements to build wheel: finished with status 'done'
+2025-04-07 21:02:18 - INFO - ERROR: 
+2025-04-07 21:02:18 - INFO - Preparing metadata (pyproject.toml): started
+2025-04-07 21:02:18 - INFO - ERROR: License :: OSI Approved :: MIT License
+2025-04-07 21:02:18 - INFO - Preparing metadata (pyproject.toml): finished with status 'done'
+2025-04-07 21:02:18 - INFO - ERROR: 
+2025-04-07 21:02:18 - INFO - Collecting openai (from -r maibot_versions\Branch main\requirements.txt (line 5))
+2025-04-07 21:02:18 - INFO - ERROR: See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+2025-04-07 21:02:18 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/e2/39/c4b38317d2c702c4bc763957735aaeaf30dfc43b5b824121c49a4ba7ba0f/openai-1.70.0-py3-none-any.whl (599 kB)
+2025-04-07 21:02:18 - INFO - ERROR: ********************************************************************************
+2025-04-07 21:02:18 - INFO - -------------------------------------- 599.1/599.1 kB 6.7 MB/s eta 0:00:00
+2025-04-07 21:02:18 - INFO - ERROR: 
+2025-04-07 21:02:19 - INFO - Collecting aiohttp (from -r maibot_versions\Branch main\requirements.txt (line 6))
+2025-04-07 21:02:19 - INFO - ERROR: !!
+2025-04-07 21:02:19 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/ce/ed/853e36d5a33c24544cfa46585895547de152dfef0b5c79fa675f6e4b7b87/aiohttp-3.11.16-cp313-cp313-win_amd64.whl (436 kB)
+2025-04-07 21:02:19 - INFO - ERROR: self._finalize_license_expression()
+2025-04-07 21:02:19 - INFO - Collecting requests (from -r maibot_versions\Branch main\requirements.txt (line 7))
+2025-04-07 21:02:19 - INFO - ERROR: Running command Preparing metadata (pyproject.toml)
+2025-04-07 21:02:19 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl (64 kB)
+2025-04-07 21:02:19 - INFO - ERROR: C:\Users\筱\AppData\Local\Temp\pip-build-env-1ls6xbqg\overlay\Lib\site-packages\setuptools\dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+2025-04-07 21:02:19 - INFO - Collecting urllib3 (from -r maibot_versions\Branch main\requirements.txt (line 8))
+2025-04-07 21:02:19 - INFO - ERROR: !!
+2025-04-07 21:02:19 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/c8/19/4ec628951a74043532ca2cf5d97b7b14863931476d117c471e8e2b1eb39f/urllib3-2.3.0-py3-none-any.whl (128 kB)
+2025-04-07 21:02:19 - INFO - ERROR: 
+2025-04-07 21:02:20 - INFO - Link requires a different Python (3.13.1 not in: '>=3.7,<3.11'): https://mirrors.aliyun.com/pypi/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip#sha256=423216d8afc5923b15df86037c6053bf030d15cc9e3224206ef868c2d63dd6dc (from https://mirrors.aliyun.com/pypi/simple/numpy/) (requires-python:>=3.7,<3.11)
+2025-04-07 21:02:20 - INFO - ERROR: ********************************************************************************
+2025-04-07 21:02:20 - INFO - Link requires a different Python (3.13.1 not in: '>=3.7,<3.11'): https://mirrors.aliyun.com/pypi/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip#sha256=63571bb7897a584ca3249c86dd01c10bcb5fe4296e3568b2e9c1a55356b6410e (from https://mirrors.aliyun.com/pypi/simple/numpy/) (requires-python:>=3.7,<3.11)
+2025-04-07 21:02:20 - INFO - ERROR: Please consider removing the following classifiers in favor of a SPDX license expression:
+2025-04-07 21:02:20 - INFO - Link requires a different Python (3.13.1 not in: '>=3.7,<3.11'): https://mirrors.aliyun.com/pypi/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip#sha256=e6c76a87633aa3fa16614b61ccedfae45b91df2767cf097aa9c933932a7ed1e0 (from https://mirrors.aliyun.com/pypi/simple/numpy/) (requires-python:>=3.7,<3.11)
+2025-04-07 21:02:20 - INFO - ERROR: 
+2025-04-07 21:02:20 - INFO - Link requires a different Python (3.13.1 not in: '>=3.7,<3.11'): https://mirrors.aliyun.com/pypi/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip#sha256=6a5928bc6241264dce5ed509e66f33676fc97f464e7a919edc672fb5532221ee (from https://mirrors.aliyun.com/pypi/simple/numpy/) (requires-python:>=3.7,<3.11)
+2025-04-07 21:02:20 - INFO - ERROR: License :: OSI Approved :: MIT License
+2025-04-07 21:02:20 - INFO - Link requires a different Python (3.13.1 not in: '>=3.7,<3.11'): https://mirrors.aliyun.com/pypi/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip#sha256=ecb55251139706669fdec2ff073c98ef8e9a84473e51e716211b41aa0f18e656 (from https://mirrors.aliyun.com/pypi/simple/numpy/) (requires-python:>=3.7,<3.11)
+2025-04-07 21:02:20 - INFO - ERROR: 
+2025-04-07 21:02:20 - INFO - Link requires a different Python (3.13.1 not in: '<3.13,>=3.9'): https://mirrors.aliyun.com/pypi/packages/55/b3/b13bce39ba82b7398c06d10446f5ffd5c07db39b09bd37370dc720c7951c/numpy-1.26.0.tar.gz#sha256=f93fc78fe8bf15afe2b8d6b6499f1c73953169fad1e9a8dd086cdff3190e7fdf (from https://mirrors.aliyun.com/pypi/simple/numpy/) (requires-python:<3.13,>=3.9)
+2025-04-07 21:02:20 - INFO - ERROR: See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+2025-04-07 21:02:20 - INFO - Link requires a different Python (3.13.1 not in: '<3.13,>=3.9'): https://mirrors.aliyun.com/pypi/packages/78/23/f78fd8311e0f710fe1d065d50b92ce0057fe877b8ed7fd41b28ad6865bfc/numpy-1.26.1.tar.gz#sha256=c8c6c72d4a9f831f328efb1312642a1cafafaa88981d9ab76368d50d07d93cbe (from https://mirrors.aliyun.com/pypi/simple/numpy/) (requires-python:<3.13,>=3.9)
+2025-04-07 21:02:20 - INFO - ERROR: ********************************************************************************
+2025-04-07 21:02:20 - INFO - Collecting numpy (from -r maibot_versions\Branch main\requirements.txt (line 9))
+2025-04-07 21:02:20 - INFO - ERROR: 
+2025-04-07 21:02:20 - INFO - Downloading https://mirrors.aliyun.com/pypi/packages/52/17/d0dd10ab6d125c6d11ffb6dfa3423c3571befab8358d4f85cd4471964fcd/numpy-2.2.4-cp313-cp313-win_amd64.whl (12.6 MB)
+2025-04-07 21:02:20 - INFO - ERROR: !!
+2025-04-07 21:02:21 - INFO - ---------------------------------------- 12.6/12.6 MB 9.9 MB/s eta 0:00:00
+2025-04-07 21:02:21 - INFO - ERROR: self._finalize_license_expression()
+2025-04-07 21:27:53 - INFO - 检查目录: assets
+2025-04-07 21:27:53 - INFO - 检查目录: maibot_versions
+2025-04-07 21:27:53 - INFO - 检查目录: logs
+2025-04-07 21:27:54 - INFO - 网络连接正常
+2025-04-07 21:28:15 - INFO - 开始部署版本: Release 0.6.0-alpha
+2025-04-07 21:28:15 - INFO - 目标路径: maibot_versions\Release 0.6.0-alpha
+2025-04-07 21:28:15 - INFO - 未找到现有仓库，开始克隆...
+2025-04-07 21:28:15 - INFO - 正在克隆分支/标签: 0.6.0-alpha
+2025-04-07 21:28:17 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.6.0-alpha'...
+2025-04-07 21:28:17 - INFO - ERROR: Note: switching to '647a0c657a86ef08a2ed7af7ee70532682c8ecbe'.
+2025-04-07 21:28:17 - INFO - ERROR: 
+2025-04-07 21:28:17 - INFO - ERROR: You are in 'detached HEAD' state. You can look around, make experimental
+2025-04-07 21:28:17 - INFO - ERROR: changes and commit them, and you can discard any commits you make in this
+2025-04-07 21:28:17 - INFO - ERROR: state without impacting any branches by switching back to a branch.
+2025-04-07 21:28:17 - INFO - ERROR: 
+2025-04-07 21:28:17 - INFO - ERROR: If you want to create a new branch to retain commits you create, you may
+2025-04-07 21:28:17 - INFO - ERROR: do so (now or later) by using -c with the switch command. Example:
+2025-04-07 21:28:17 - INFO - ERROR: 
+2025-04-07 21:28:17 - INFO - ERROR: git switch -c <new-branch-name>
+2025-04-07 21:28:17 - INFO - ERROR: 
+2025-04-07 21:28:17 - INFO - ERROR: Or undo this operation with:
+2025-04-07 21:28:17 - INFO - ERROR: 
+2025-04-07 21:28:17 - INFO - ERROR: git switch -
+2025-04-07 21:28:17 - INFO - ERROR: 
+2025-04-07 21:28:17 - INFO - ERROR: Turn off this advice by setting config variable advice.detachedHead to false
+2025-04-07 21:28:17 - INFO - ERROR: 
+2025-04-07 21:28:17 - INFO - 仓库克隆成功到: maibot_versions\Release 0.6.0-alpha
+2025-04-07 21:28:17 - INFO - 代码操作成功，准备配置环境...
+2025-04-07 21:28:17 - INFO - 正在创建虚拟环境...
+2025-04-07 21:28:21 - INFO - 正在安装基础工具...
+2025-04-07 21:28:26 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 21:28:26 - INFO - ERROR: 
+2025-04-07 21:28:26 - INFO - Collecting pip==24.0
+2025-04-07 21:28:26 - INFO - ERROR: [notice] A new release of pip is available: 24.0 -> 25.0.1
+2025-04-07 21:28:26 - INFO - Downloading https://repo.huaweicloud.com/repository/pypi/packages/8a/6a/19e9fe04fca059ccf770861c7d5721ab4c2aebc539889e97c7977528a53b/pip-24.0-py3-none-any.whl (2.1 MB)
+2025-04-07 21:28:26 - INFO - ERROR: [notice] To update, run: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.6.0-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 21:28:26 - INFO - ---------------------------------------- 2.1/2.1 MB 3.3 MB/s eta 0:00:00
+2025-04-07 21:28:26 - INFO - Collecting setuptools==68.0.0
+2025-04-07 21:28:26 - INFO - Downloading https://repo.huaweicloud.com/repository/pypi/packages/c7/42/be1c7bbdd83e1bfb160c94b9cafd8e25efc7400346cf7ccdbdb452c467fa/setuptools-68.0.0-py3-none-any.whl (804 kB)
+2025-04-07 21:28:26 - INFO - -------------------------------------- 804.0/804.0 kB 4.5 MB/s eta 0:00:00
+2025-04-07 21:28:26 - INFO - Installing collected packages: setuptools, pip
+2025-04-07 21:28:26 - INFO - Attempting uninstall: pip
+2025-04-07 21:28:26 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 21:28:26 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 21:28:26 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 21:28:26 - INFO - Successfully installed pip-24.0 setuptools-68.0.0
+2025-04-07 21:28:26 - INFO - 正在安装依赖(最多重试3次)...
+2025-04-07 21:28:26 - INFO - 尝试第1次安装...
+2025-04-07 21:38:14 - INFO - 检查目录: assets
+2025-04-07 21:38:14 - INFO - 检查目录: maibot_versions
+2025-04-07 21:38:14 - INFO - 检查目录: logs
+2025-04-07 21:38:15 - INFO - 网络连接正常
+2025-04-07 21:38:16 - ERROR - 发行版获取失败: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/MaiM-with-u/MaiBot/releases?page=1&per_page=100
+2025-04-07 21:38:16 - ERROR - 分支获取失败: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/MaiM-with-u/MaiBot/branches
+2025-04-07 21:38:44 - INFO - 检查目录: assets
+2025-04-07 21:38:44 - INFO - 检查目录: maibot_versions
+2025-04-07 21:38:44 - INFO - 检查目录: logs
+2025-04-07 21:38:44 - WARNING - 网络连接异常
+2025-04-07 21:38:46 - ERROR - 分支获取失败: 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/MaiM-with-u/MaiBot/branches
+2025-04-07 21:38:55 - INFO - 开始部署版本: Release 0.6.0-alpha
+2025-04-07 21:38:55 - INFO - 目标路径: maibot_versions\Release 0.6.0-alpha
+2025-04-07 21:38:55 - INFO - 未找到现有仓库，开始克隆...
+2025-04-07 21:38:55 - INFO - 正在克隆分支/标签: 0.6.0-alpha
+2025-04-07 21:38:57 - INFO - ERROR: Cloning into 'maibot_versions\Release 0.6.0-alpha'...
+2025-04-07 21:38:57 - INFO - ERROR: Note: switching to '647a0c657a86ef08a2ed7af7ee70532682c8ecbe'.
+2025-04-07 21:38:57 - INFO - ERROR: 
+2025-04-07 21:38:57 - INFO - ERROR: You are in 'detached HEAD' state. You can look around, make experimental
+2025-04-07 21:38:57 - INFO - ERROR: changes and commit them, and you can discard any commits you make in this
+2025-04-07 21:38:57 - INFO - ERROR: state without impacting any branches by switching back to a branch.
+2025-04-07 21:38:57 - INFO - ERROR: 
+2025-04-07 21:38:57 - INFO - ERROR: If you want to create a new branch to retain commits you create, you may
+2025-04-07 21:38:57 - INFO - ERROR: do so (now or later) by using -c with the switch command. Example:
+2025-04-07 21:38:57 - INFO - ERROR: 
+2025-04-07 21:38:57 - INFO - ERROR: git switch -c <new-branch-name>
+2025-04-07 21:38:57 - INFO - ERROR: 
+2025-04-07 21:38:57 - INFO - ERROR: Or undo this operation with:
+2025-04-07 21:38:57 - INFO - ERROR: 
+2025-04-07 21:38:57 - INFO - ERROR: git switch -
+2025-04-07 21:38:57 - INFO - ERROR: 
+2025-04-07 21:38:57 - INFO - ERROR: Turn off this advice by setting config variable advice.detachedHead to false
+2025-04-07 21:38:57 - INFO - ERROR: 
+2025-04-07 21:38:57 - INFO - 仓库克隆成功到: maibot_versions\Release 0.6.0-alpha
+2025-04-07 21:38:57 - INFO - 代码操作成功，准备配置环境...
+2025-04-07 21:38:57 - INFO - 正在创建虚拟环境...
+2025-04-07 21:39:02 - INFO - 正在安装基础工具...
+2025-04-07 21:39:07 - INFO - Looking in indexes: https://repo.huaweicloud.com/repository/pypi/simple
+2025-04-07 21:39:07 - INFO - ERROR: 
+2025-04-07 21:39:07 - INFO - Collecting pip==24.0
+2025-04-07 21:39:07 - INFO - ERROR: [notice] A new release of pip is available: 24.0 -> 25.0.1
+2025-04-07 21:39:07 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/8a/6a/19e9fe04fca059ccf770861c7d5721ab4c2aebc539889e97c7977528a53b/pip-24.0-py3-none-any.whl (2.1 MB)
+2025-04-07 21:39:07 - INFO - ERROR: [notice] To update, run: D:\桌面\X-Deploy-Station\maibot_versions\Release 0.6.0-alpha\venv\Scripts\python.exe -m pip install --upgrade pip
+2025-04-07 21:39:07 - INFO - Collecting setuptools==68.0.0
+2025-04-07 21:39:07 - INFO - Using cached https://repo.huaweicloud.com/repository/pypi/packages/c7/42/be1c7bbdd83e1bfb160c94b9cafd8e25efc7400346cf7ccdbdb452c467fa/setuptools-68.0.0-py3-none-any.whl (804 kB)
+2025-04-07 21:39:07 - INFO - Installing collected packages: setuptools, pip
+2025-04-07 21:39:07 - INFO - Attempting uninstall: pip
+2025-04-07 21:39:07 - INFO - Found existing installation: pip 24.3.1
+2025-04-07 21:39:07 - INFO - Uninstalling pip-24.3.1:
+2025-04-07 21:39:07 - INFO - Successfully uninstalled pip-24.3.1
+2025-04-07 21:39:07 - INFO - Successfully installed pip-24.0 setuptools-68.0.0
+2025-04-07 21:39:07 - INFO - 正在安装依赖(最多重试3次)...
+2025-04-07 21:39:07 - INFO - 尝试第1次安装...

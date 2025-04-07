@@ -118,7 +118,7 @@ class App(ctk.CTk):
             self.setup_styles()
             self.create_settings_button()
             self.create_title_section()
-            self.create_version_section()
+            self.create_version_section()  
             self.create_log_section()
             self.create_button_section()
             self.create_loading_label()
@@ -296,6 +296,10 @@ class App(ctk.CTk):
         self.is_busy = True
         self.set_status("正在部署...")
         
+        # 禁用按钮
+        self.deploy_button.configure(state="disabled")
+        self.start_button.configure(state="disabled")
+        
         def deploy():
             try:
                 success = self.controller.clone_version(version)
@@ -308,6 +312,9 @@ class App(ctk.CTk):
                 self.set_status("", f"部署异常: {str(e)}")
             finally:
                 self.is_busy = False
+                # 恢复按钮状态
+                self.after(0, lambda: self.deploy_button.configure(state="normal"))
+                self.after(0, lambda: self.start_button.configure(state="normal"))
         
         self.thread_pool.submit(deploy)
 
@@ -324,12 +331,18 @@ class App(ctk.CTk):
         """启动选中的版本"""
         if self.is_busy:
             return
+        
         version = self.version_combobox.get()
-        success = self.controller.start_bot(version)
-        if success:
-            self.log_message("机器人启动成功")
-        else:
-            self.log_message("机器人启动失败", "ERROR")
+        self.start_button.configure(state="disabled")
+        
+        try:
+            success = self.controller.start_bot(version)
+            if success:
+                self.log_message("机器人启动成功")
+            else:
+                self.log_message("机器人启动失败", "ERROR")
+        finally:
+            self.start_button.configure(state="normal")
 
     def log_message(self, message, level="INFO"):
         """添加日志消息"""
