@@ -7,13 +7,15 @@ from tkinter import messagebox
 import customtkinter as ctk
 import threading
 from concurrent.futures import ThreadPoolExecutor
+import requests  # 添加requests导入
 
 # 确保项目根目录在Python路径中
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 
 from src.utils import setup_environment, check_network
-from src.ui.app import App  # 确保这是最后导入的
+from src.utils.github_auth import GitHubAuth  # 添加GitHub验证导入
+from src.ui.app import App
 from src.logger import logger
 from src.settings import AppConfig as Settings  # 添加配置类导入
 
@@ -30,6 +32,16 @@ def main():
         
         # 初始化环境
         loop.run_until_complete(setup_environment())
+        
+        # GitHub token验证
+        config = Settings.load_config()
+        if not config.get('github_token'):
+            messagebox.showwarning("警告", "未设置GitHub Token，某些功能可能受限")
+        else:
+            auth = GitHubAuth(config['github_token'])
+            if not loop.run_until_complete(auth.verify_token()):
+                messagebox.showerror("错误", "GitHub Token验证失败")
+                return
         
         # 创建应用实例
         app = App()

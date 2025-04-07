@@ -3,8 +3,11 @@ import logging
 from pathlib import Path
 import os
 from typing import Any, Dict, Optional
+from .logger import logger
 
 class AppConfig:
+    CONFIG_FILE = Path(__file__).parent.parent / "config.json"
+
     def __init__(self):
         self.settings_path = Path("settings.json")
         self.assets_dir = Path("assets")
@@ -101,3 +104,33 @@ class AppConfig:
         if section in self._config:
             self._initialize_defaults()
             self.save()
+
+    @classmethod
+    def load_config(cls):
+        """加载配置文件"""
+        try:
+            if not cls.CONFIG_FILE.exists():
+                default_config = {
+                    "default_version": "latest",
+                    "github_token": ""
+                }
+                with open(cls.CONFIG_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(default_config, f, indent=4)
+                return default_config
+                
+            with open(cls.CONFIG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.log(f"配置加载失败: {e}", "ERROR")
+            return {}
+    
+    @classmethod
+    def save_config(cls, config):
+        """保存配置文件"""
+        try:
+            with open(cls.CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=4)
+            return True
+        except Exception as e:
+            logger.log(f"配置保存失败: {e}", "ERROR")
+            return False

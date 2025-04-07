@@ -4,84 +4,102 @@ import signal
 import psutil
 import subprocess
 import logging
-from typing import Generator, Tuple, Optional, List
+from typing import Generator, Tuple, Optional, List, Union, Iterator
 from .logger import logger
 
 class ProcessManager:
     def __init__(self):
         self.active_processes = {}
 
+    @staticmethod
     def run_command(
-        self, 
-        cmd: List[str], 
+        command: Union[str, List[str]], 
         cwd: Optional[str] = None, 
-        realtime_output: bool = False
-    ) -> Generator[str, None, None]:
-        """执行命令并实时返回输出"""
+        realtime_output: bool = False,
+        shell: bool = False
+    ) -> Iterator[str]:
+        """
+        执行命令并支持实时输出
+        
+        Args:
+            command: 要执行的命令，可以是字符串或列表
+            cwd: 工作目录
+            realtime_output: 是否实时输出
+            shell: 是否使用shell执行
+            
+        Yields:
+            命令的输出行
+        """
         try:
             process = subprocess.Popen(
-                cmd,
+                command,
                 cwd=cwd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
+                stderr=subprocess.STDOUT,
                 universal_newlines=True,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                shell=shell,
+                bufsize=1
             )
-            
-            self.active_processes[process.pid] = process
-            
+
             # 实时读取输出
             while True:
-                # 读取一行输出
-                output = process.stdout.readline() if process.stdout else ''
-                error = process.stderr.readline() if process.stderr else ''
-                
-                # 如果都没有输出且进程结束，就退出循环
-                if not output and not error and process.poll() is not None:
+                line = process.stdout.readline()
+                if not line and process.poll() is not None:
                     break
-                    
-                # 返回输出
-                if output:
-                    yield output.strip()
-                if error:
-                    yield f"ERROR: {error.strip()}"
-                    
-            # 检查最终状态
-            if process.poll() != 0:
-                remaining_error = process.stderr.read() if process.stderr else ''
-                if remaining_error:
-                    yield f"ERROR: {remaining_error.strip()}"
-            
-            # 等待进程完成
-            process.wait()
-            
-        except Exception as e:
-            yield f"ERROR: 命令执行失败: {str(e)}"
-        finally:
-            if process.pid in self.active_processes:
-                del self.active_processes[process.pid]
+                if line:
+                    yield line.rstrip()
 
-    def kill_process_tree(self, pid: int) -> bool:
-        """终止进程树"""
+            # 获取剩余输出
+            remaining_output = process.stdout.read()
+            if remaining_output:
+                for line in remaining_output.splitlines():
+                    yield line.rstrip()
+
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(
+                    process.returncode, 
+                    command
+                )
+
+        except Exception as e:
+            yield f"命令执行失败: {str(e)}"
+            raise
+
+    @staticmethod
+    def kill_process_tree(pid: int) -> bool:
+        """
+        终止进程及其所有子进程
+        
+        Args:
+            pid: 进程ID
+            
+        Returns:
+            bool: 是否成功终止
+        """
         try:
-            if os.name == 'nt':
-                parent = psutil.Process(pid)
-                for child in parent.children(recursive=True):
-                    try:
+            parent = psutil.Process(pid)
+            children = parent.children(recursive=True)
+            
+            # 先终止子进程
+            for child in children:
+                try:
+                    if os.name == 'nt':
                         child.kill()
-                    except psutil.NoSuchProcess:
-                        pass
+                    else:
+                        os.kill(child.pid, signal.SIGTERM)
+                except psutil.NoSuchProcess:
+                    pass
+            
+            # 终止父进程
+            if os.name == 'nt':
                 parent.kill()
             else:
-                os.killpg(os.getpgid(pid), signal.SIGTERM)
+                os.kill(pid, signal.SIGTERM)
+                
             return True
-            
-        except (psutil.NoSuchProcess, ProcessLookupError):
-            return True
-        except Exception as e:
-            logger.log(f"进程终止失败: {e}", "ERROR")
+        except psutil.NoSuchProcess:
+            return True  # 进程已经不存在，视为成功
+        except Exception:
             return False
 
     def cleanup(self):

@@ -186,7 +186,6 @@ class VersionController:
             return False
 
     def _setup_virtual_env(self, target_path: str, version: str) -> bool:
-        """设置虚拟环境"""
         try:
             venv_path = os.path.join(target_path, 'venv')
             requirements_path = os.path.join(target_path, "requirements.txt")
@@ -195,6 +194,11 @@ class VersionController:
                 venv_path, 
                 'Scripts' if os.name == 'nt' else 'bin',
                 'python' + ('.exe' if os.name == 'nt' else '')
+            )
+            pip_path = os.path.join(
+                venv_path,
+                'Scripts' if os.name == 'nt' else 'bin',
+                'pip' + ('.exe' if os.name == 'nt' else '')
             )
             
             # 1. 创建虚拟环境
@@ -206,60 +210,28 @@ class VersionController:
                 ):
                     self._log(output)
             
-            # 2. 升级pip和setuptools到兼容版本
-            self._log("正在安装基础工具...")
-            base_packages = [
-                "pip==24.0",  # 使用稳定版本
-                "setuptools==68.0.0"  # 兼容性较好的版本
+            # 2. 配置pip源
+            self._log("正在配置pip源...")
+            config_cmd = [
+                pip_path, "config", "set", 
+                "global.index-url", 
+                "https://pypi.tuna.tsinghua.edu.cn/simple"
             ]
+            for output in self.process.run_command(config_cmd, realtime_output=True):
+                self._log(output)
+            
+            # 3. 升级pip和setuptools
+            self._log("正在更新基础工具...")
             for output in self.process.run_command(
-                [python_path, "-m", "pip", "install"] + base_packages,
+                [python_path, "-m", "pip", "install", "--upgrade", "pip==24.0", "setuptools==68.0.0"],
                 realtime_output=True
             ):
                 self._log(output)
             
-            # 3. 安装依赖(带重试机制)
+            # 4. 安装项目依赖
             if os.path.exists(requirements_path):
-                self._log("正在安装依赖(最多重试3次)...")
-                max_retries = 3
-                retry_count = 0
-                success = False
-                
-                while not success and retry_count < max_retries:
-                    try:
-                        retry_count += 1
-                        self._log(f"尝试第{retry_count}次安装...")
-                        
-                        # 使用稳定的镜像源组合
-                        mirrors = [
-                            "https://pypi.tuna.tsinghua.edu.cn/simple",
-                            "https://mirrors.aliyun.com/pypi/simple",
-                            "https://pypi.org/simple"
-                        ]
-                        current_mirror = mirrors[retry_count % len(mirrors)]
-                        
-                        # 添加超时和重试参数
-                        cmd = [
-                            python_path, "-m", "pip", "install",
-                            "-r", requirements_path,
-                            "-i", current_mirror,
-                            "--timeout", "60",
-                            "--retries", "3",
-                            "--progress-bar", "on"
-                        ]
-                        
-                        for output in self.process.run_command(cmd, realtime_output=True):
-                            self._log(output)
-                        
-                        success = True
-                        self._log("依赖安装成功")
-                        
-                    except Exception as e:
-                        self._log(f"第{retry_count}次安装失败: {str(e)}", "WARNING")
-                        if retry_count == max_retries:
-                            self._log("达到最大重试次数，依赖安装失败", "ERROR")
-                            return False
-                        time.sleep(5)  # 等待5秒后重试
+                self._log("正在安装项目依赖...")
+                self._install_dependencies(python_path, requirements_path)
             else:
                 self._log("未找到requirements.txt，跳过依赖安装", "WARNING")
             
@@ -274,14 +246,15 @@ class VersionController:
         """安装依赖的内部方法"""
         # 使用国内镜像源
         mirrors = [
+            "https://pypi.tuna.tsinghua.edu.cn/simple",
             "https://mirrors.aliyun.com/pypi/simple/",
-            "https://pypi.tuna.tsinghua.edu.cn/simple/",
             "https://pypi.mirrors.ustc.edu.cn/simple/"
         ]
         
         for mirror in mirrors:
             try:
                 self._log(f"尝试使用镜像源: {mirror}")
+                self._log(f"开始安装依赖，路径: {requirements_path}")
                 for output in self.process.run_command(
                     [
                         python_path, "-m", "pip", "install",
@@ -297,26 +270,41 @@ class VersionController:
                 ):
                     if output.strip():
                         self._log(output)
+                self._log("依赖安装成功")
+                # 安装完成后解锁按钮
+                self._unlock_buttons()
                 return  # 如果成功安装，直接返回
             except Exception as e:
-                self._log(f"使用镜像 {mirror} 安装失败: {e}", "WARNING")
+                self._log(f"使用镜像 {mirror} 安装失败: {str(e)}", "WARNING")
                 continue
         
         # 如果所有镜像都失败，尝试使用默认源
         self._log("所有镜像安装失败，尝试使用默认源")
-        for output in self.process.run_command(
-            [
-                python_path, "-m", "pip", "install",
-                "-r", requirements_path,
-                "--timeout", "60",
-                "--retries", "3",
-                "-v",
-                "--progress-bar=on"
-            ],
-            realtime_output=True
-        ):
-            if output.strip():
-                self._log(output)
+        try:
+            for output in self.process.run_command(
+                [
+                    python_path, "-m", "pip", "install",
+                    "-r", requirements_path,
+                    "--timeout", "60",
+                    "--retries", "3",
+                    "-v",
+                    "--progress-bar=on"
+                ],
+                realtime_output=True
+            ):
+                if output.strip():
+                    self._log(output)
+            self._log("依赖安装成功")
+            # 安装完成后解锁按钮
+            self._unlock_buttons()
+        except Exception as e:
+            self._log(f"使用默认源安装失败: {str(e)}", "ERROR")
+
+    def _unlock_buttons(self):
+        """解锁按钮的内部方法"""
+        # 假设有两个按钮需要解锁，这里调用UI层的方法
+        if hasattr(self, 'ui'):
+            self.ui.unlock_buttons()
 
     def start_bot(self, version: str) -> bool:
         """使用虚拟环境启动机器人"""
@@ -324,23 +312,31 @@ class VersionController:
             if self.bot_process:
                 self.stop_bot()
             
-            bot_path = os.path.join(self.local_path, version)
-            if not os.path.exists(os.path.join(bot_path, "bot.py")):
-                raise FileNotFoundError("bot.py not found")
+            # 获取版本目录的完整路径
+            version_dir = os.path.join(self.local_path, version)
+            bot_path = os.path.join(version_dir, "bot.py")
+            
+            if not os.path.exists(bot_path):
+                raise FileNotFoundError(f"未找到机器人文件: {bot_path}")
             
             python_path = os.path.join(
-                self.venv_cache.get(version, os.path.join(bot_path, 'venv')),
+                self.venv_cache.get(version, os.path.join(version_dir, 'venv')),
                 'Scripts' if os.name == 'nt' else 'bin',
                 'python' + ('.exe' if os.name == 'nt' else '')
             )
                 
             self._log(f"正在启动机器人，使用Python: {python_path}")
+            self._log(f"运行目录: {version_dir}")
+            self._log(f"Bot文件: {bot_path}")
+            
+            # 直接在版本目录下运行bot.py
             self.bot_process = subprocess.Popen(
                 [python_path, "bot.py"],
-                cwd=bot_path,
+                cwd=version_dir,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             return True
+            
         except Exception as e:
             self._log(f"启动失败: {str(e)}", "ERROR")
             return False
