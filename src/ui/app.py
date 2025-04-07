@@ -103,7 +103,6 @@ class App(ctk.CTk):
         """设置UI组件"""
         # 避免阻塞的UI初始化
         self.after(1, self._create_ui_components)
-
     def _create_ui_components(self):
         """实际创建UI组件的方法"""
         try:
@@ -269,12 +268,11 @@ class App(ctk.CTk):
             text_color="gray"
         )
         self.loading_label.place(relx=0.5, rely=0.4, anchor="center")
-
     def open_settings(self):
         """打开设置窗口"""
-        settings_window = SettingsWindow(self)
-        settings_window.focus()
-
+    # 将设置窗口保存为实例变量，防止被垃圾回收
+        self.settings_window = SettingsWindow(self)
+        self.settings_window.focus()
     def refresh_versions(self):
         """刷新版本列表"""
         try:
@@ -438,3 +436,67 @@ class App(ctk.CTk):
     def set_status(self, message: str, error: Optional[str] = None):
         """线程安全的状态更新"""
         self.status_queue.put((message, error))
+    def _set_ui_transparency(self, alpha):
+        """设置UI元素透明度（不影响背景）"""
+        try:
+            # 确保alpha在有效范围内
+            alpha = max(0.5, min(1.0, float(alpha)))
+        
+        # 需要应用透明度的UI组件
+            ui_elements = [
+                self.main_frame,
+                self.version_frame,
+                self.log_frame,
+                self.button_frame,
+                self.title_label,
+                self.settings_button,
+                self.version_label,
+                self.version_combobox,
+                self.log_text,
+                self.deploy_button,
+                self.start_button,
+                self.loading_label
+            ]
+        
+            for widget in ui_elements:
+                if widget is None:
+                    continue
+                
+                # 对CTk组件应用透明度
+                if isinstance(widget, (ctk.CTkFrame, ctk.CTkLabel, ctk.CTkButton, 
+                                    ctk.CTkComboBox, ctk.CTkTextbox)):
+                    # 获取当前颜色
+                    fg_color = widget.cget("fg_color")
+                    bg_color = widget.cget("bg_color") if hasattr(widget, "bg_color") else None
+                
+                    # 应用透明度到前景色
+                    if isinstance(fg_color, str):
+                        widget.configure(fg_color=self._apply_alpha_to_color(fg_color, alpha))
+                    elif isinstance(fg_color, (list, tuple)):
+                        widget.configure(fg_color=[self._apply_alpha_to_color(c, alpha) for c in fg_color])
+                
+                    # 应用透明度到背景色
+                    if bg_color:
+                        if isinstance(bg_color, str):
+                            widget.configure(bg_color=self._apply_alpha_to_color(bg_color, alpha))
+                        elif isinstance(bg_color, (list, tuple)):
+                            widget.configure(bg_color=[self._apply_alpha_to_color(c, alpha) for c in bg_color])
+        
+            # 保存透明度设置
+            self.settings.set("appearance", "transparency", str(alpha))
+            self.settings.save()
+        
+        except Exception as e:
+            logger.error(f"设置透明度失败: {e}")
+
+    def _apply_alpha_to_color(self, color, alpha):
+        """给颜色添加透明度"""
+        if isinstance(color, str) and color.startswith("#"):
+            # 处理十六进制颜色
+            hex_color = color.lstrip('#')
+            rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+            return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}{int(255*alpha):02x}"
+        elif isinstance(color, (list, tuple)):
+            # 处理RGBA颜色
+            return (*color[:3], int(255*alpha))
+        return color

@@ -36,15 +36,29 @@ class SettingsWindow(ctk.CTkToplevel):
     def __init__(self, parent):
         # 调用父类的初始化方法。
         super().__init__(parent)
+        self.parent = parent
         # 设置窗口标题。
         self.title("设置")
         # 设置窗口大小。
         self.geometry("600x400")
+        window_width = 600
+        window_height = 400
         # 配置列权重。
         self.grid_columnconfigure(0, weight=1)
         # 配置行权重。
         self.grid_rowconfigure(0, weight=1)
-
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        # 计算居中位置
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        # 窗口置顶
+        self.transient(parent)  
+        self.grab_set()
+        # 设置窗口位置和大小
+        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        
         # 创建标签视图。
         self.tabview = ctk.CTkTabview(self)
         # 将标签视图放置在窗口中。
@@ -59,13 +73,137 @@ class SettingsWindow(ctk.CTkToplevel):
         self.init_appearance_tab()
         # 初始化“部署”标签页。
         self.init_deployment_tab()
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     # 初始化外观设置标签页。
     def init_appearance_tab(self):
-        # 实现外观设置页面
+        # 创建外观设置框架
+        appearance_frame = ctk.CTkFrame(self.tab_appearance)
+        appearance_frame.pack(padx=10, pady=10, fill="both", expand=True)
+        ctk.CTkLabel(
+            appearance_frame, 
+            text="主题模式:"
+        ).pack(pady=(10, 0), anchor="w")
+        self.theme_mode = ctk.StringVar(value="System")
+        theme_options = ["Light", "Dark", "System"]
+        # 主色调选择
+        ctk.CTkLabel(
+            appearance_frame, 
+            text="主色调:"
+        ).pack(pady=(10, 0), anchor="w")
+        self.main_color = ctk.StringVar(value="#2b2b2b")
+        color_options = ["#2b2b2b", "#1f6aa5", "#3a7ebf", "#5d9cec", "#44b78b"]
+        color_menu = ctk.CTkOptionMenu(
+            appearance_frame,
+            values=color_options,
+            variable=self.main_color,
+            command=self.change_main_color
+        )
+        color_menu.pack(pady=5, fill="x")
+        # 自定义颜色选择
+        ctk.CTkLabel(
+            appearance_frame, 
+            text="自定义颜色:"
+        ).pack(pady=(10, 0), anchor="w")
+        self.color_picker = ctk.CTkButton(
+            appearance_frame,
+            text="选择颜色",
+            command=self.pick_color
+        )
+        self.color_picker.pack(pady=5, fill="x")
+        # 透明度调节滑块
+        ctk.CTkLabel(
+            appearance_frame, 
+            text="透明度:"
+        ).pack(pady=(10, 0), anchor="w")
+        self.transparency = ctk.DoubleVar(value=0.9)
+        transparency_slider = ctk.CTkSlider(
+            appearance_frame,
+            from_=0.5,
+            to=1.0,
+            number_of_steps=10,
+            variable=self.transparency,
+            command=self.change_transparency
+        )
+        transparency_slider.pack(pady=5, fill="x")
+        # 应用按钮
+        apply_button = ctk.CTkButton(
+            appearance_frame,
+            text="应用设置",
+            command=self.apply_appearance_settings
+        )
+        apply_button.pack(pady=20, fill="x")
         pass
 
     # 初始化部署设置标签页。
     def init_deployment_tab(self):
         # 实现部署设置页面
         pass
+    def on_close(self):
+        """窗口关闭时的处理"""
+        # 清除父窗口对当前窗口的引用
+        self.parent.settings_window = None
+        self.destroy()
+    def change_theme(self, new_theme):
+        """更改主题模式"""
+        ctk.set_appearance_mode(new_theme)
+        self.parent.settings.set("appearance", "theme_mode", new_theme)
+    def change_main_color(self, new_color):
+        """更改主色调"""
+        ctk.set_default_color_theme(new_color)
+        self.parent.settings.set("appearance", "main_color", new_color)
+    def pick_color(self):
+        """打开颜色选择器"""
+        color = ctk.CTkColorPicker.ask_color()
+        if color:
+            self.main_color.set(color)
+            self.change_main_color(color)
+    def change_transparency(self, value):
+        """更改透明度"""
+        try:
+            if hasattr(self.parent, '_set_ui_transparency'):
+                self.parent._set_ui_transparency(float(value))
+            else:
+                print("父窗口缺少透明度控制方法")
+        except Exception as e:
+            if hasattr(self.parent, 'log_message'):
+                self.parent.log_message(f"透明度设置错误: {str(e)}", "ERROR")
+            # 同时显示错误提示窗口
+            SuccessWindow(self, f"透明度设置失败: {str(e)}")
+    def apply_appearance_settings(self):
+        """应用所有外观设置"""
+        self.parent.settings.save()
+        success_window = SuccessWindow(self, "外观设置已应用")
+        success_window.focus()
+class SuccessWindow(ctk.CTkToplevel):
+    """自定义成功提示窗口"""
+    def __init__(self, parent, message):
+        super().__init__(parent)
+        self.title("提示")
+        
+        # 设置窗口大小和居中
+        window_width = 300
+        window_height = 150
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        
+        # 窗口置顶属性
+        self.attributes('-topmost', True)
+        self.transient(parent)
+        self.grab_set()
+        
+        # 内容布局
+        ctk.CTkLabel(
+            self,
+            text=message,
+            font=("Arial", 14)
+        ).pack(pady=20)
+        
+        ctk.CTkButton(
+            self,
+            text="确定",
+            command=self.destroy
+        ).pack(pady=10)
