@@ -3,7 +3,7 @@
     <el-card class="deploy-card">
       <template #header>
         <div class="card-header">
-          <h2>MaiBot 部署站</h2>
+          <h2>X² Deploy Station</h2>
         </div>
       </template>
       
