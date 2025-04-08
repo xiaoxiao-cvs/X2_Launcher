@@ -4,12 +4,46 @@
         "transparency": "1.0",
         "theme": "dark",
         "accent_color": "#1E90FF",
-        "window_size": "1280x720"
+        "window_size": "1280x720",
+        "font_family": "Arial",
+        "font_size": 12,
+        "button_radius": 8,
+        "button_color": "#409EFF",
+        "hover_color": "#66B1FF",
+        "border_width": 1,
+        "animation_speed": "normal"
     },
     "deployment": {
         "auto_check_update": true,
         "python_version": "3.13.0",
         "install_path": "maibot_versions",
-        "repo_url": "https://github.com/MaiM-with-u/MaiBot.git"
+        "repo_url": "https://github.com/MaiM-with-u/MaiBot.git",
+        "temp_dir": "temp",
+        "backup_path": "backups",
+        "max_parallel_jobs": 3,
+        "timeout": 300,
+        "retry_count": 3,
+        "cleanup_on_fail": true
+    },
+    "logging": {
+        "level": "INFO",
+        "file_path": "logs/app.log",
+        "max_size": "10MB",
+        "backup_count": 5,
+        "format": "[%(asctime)s][%(levelname)s] %(message)s"
+    },
+    "process": {
+        "max_memory": "2GB",
+        "cpu_limit": 80,
+        "auto_restart": true,
+        "restart_delay": 5,
+        "health_check_interval": 30
+    },
+    "security": {
+        "enable_auto_update": true,
+        "verify_signatures": true,
+        "allowed_origins": ["localhost", "127.0.0.1"],
+        "session_timeout": 3600,
+        "max_retry_attempts": 3
     }
 }

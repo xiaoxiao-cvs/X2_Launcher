@@ -1,5 +1,5 @@
 import requests
-from ..logger import logger
+from ..logger import XLogger
 
 class GitHubAuth:
     def __init__(self, token):
@@ -14,11 +14,11 @@ class GitHubAuth:
         try:
             response = requests.get("https://api.github.com/user", headers=headers)
             if response.status_code == 200:
-                logger.log("GitHub token 验证成功", "INFO")
+                XLogger.log("GitHub token 验证成功", "INFO")
                 return True
             else:
-                logger.log(f"GitHub token 验证失败: {response.status_code}", "ERROR")
+                XLogger.log(f"GitHub token 验证失败: {response.status_code}", "ERROR")
                 return False
         except Exception as e:
-            logger.log(f"GitHub token 验证异常: {e}", "ERROR")
+            XLogger.log(f"GitHub token 验证异常: {e}", "ERROR")
             return False

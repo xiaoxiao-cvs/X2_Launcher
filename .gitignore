@@ -11,8 +11,12 @@ venv/
 /out/
 *.spec
 *.log
+# 配置文件（如果包含敏感信息）
 /config.json
-/settings.json
+
+# npm依赖锁定文件
+/package-lock.json
+/frontend/package-lock.json
 
 # 依赖目录
 node_modules/

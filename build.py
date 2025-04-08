@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 from PIL import Image
+import PyInstaller.__main__  # 添加导入
 
 def ensure_directory(path):
     """确保目录存在"""
@@ -121,53 +122,35 @@ def build_application():
     """构建应用程序"""
     print("准备开始构建...")
     
-    # 确保PyInstaller已安装
-    try:
-        import PyInstaller.__main__
-    except ImportError:
-        if not install_pyinstaller():
-            print("PyInstaller安装失败，退出构建")
-            sys.exit(1)
-        # 重新导入
-        import PyInstaller.__main__
-    
-    print("开始构建应用...")
+    # 确保build目录存在
+    ensure_directory('build')
     ensure_directory('dist')
     
-    # 转换图标
-    ico_path = convert_to_ico()
-    
-    # 构建后端
     try:
+        # 先确保PyInstaller已导入
+        if 'PyInstaller' not in sys.modules:
+            print("正在导入PyInstaller...")
+            import PyInstaller.__main__
+            
+        # 构建后端
         PyInstaller.__main__.run([
-            'main.py',
-            '--onefile',
-            '--name=backend',
-            '--hidden-import=uvicorn',
-            '--hidden-import=fastapi',
-            '--clean'
+            '--specfile',
+            'build/backend.spec'
         ])
-    except Exception as e:
-        print(f"后端构建失败: {e}")
-        sys.exit(1)
+    except ImportError:
+        print("PyInstaller未安装,尝试安装...")
+        if not install_pyinstaller():
+            print("PyInstaller安装失败,退出构建")
+            sys.exit(1)
+        # 重新导入并继续
+        import PyInstaller.__main__
     
     # 构建启动器
-    launcher_args = [
-        'launcher.py',
-        '--onefile',
-        '--name=MaiBotDeployStation',
-        '--noconsole',
-        '--clean'
-    ]
-    
-    # 如果存在图标则添加
-    if os.path.exists('assets/app.ico'):
-        launcher_args.extend(['--icon', 'assets/app.ico'])
-    else:
-        print("警告: 图标文件不存在，将使用默认图标")
-    
     try:
-        PyInstaller.__main__.run(launcher_args)
+        PyInstaller.__main__.run([
+            '--specfile',
+            'build/launcher.spec'
+        ])
     except Exception as e:
         print(f"启动器构建失败: {e}")
         sys.exit(1)
