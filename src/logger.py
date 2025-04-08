@@ -2,45 +2,42 @@ import logging
 from typing import Callable, List
 from datetime import datetime
 
-class LogHandler:
-    def __init__(self, log_file: str = "deploy.log"):
+class XDeployLogger:
+    def __init__(self, app_name: str = "X² Launcher"):
+        self.app_name = app_name
         self.callbacks: List[Callable] = []
-        self._setup_logging(log_file)
+        self._setup_logging()
     
-    def _setup_logging(self, log_file: str):
-        """配置日志系统"""
+    def _setup_logging(self):
         logging.basicConfig(
-            filename=log_file,
             level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            format=f'[{self.app_name}][%(asctime)s.%(msecs)03d][%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
         )
     
-    def add_callback(self, callback: Callable[[str, str], None]):
-        """添加日志回调函数"""
+    def log(self, message: str, level: str = "INFO"):
+        """统一的日志记录方法"""
+        now = datetime.now()
+        timestamp = now.strftime("%H:%M:%S.%f")[:-3]
+        log_message = f"[{self.app_name}][{timestamp}][{level}] {message}"
+        
+        # 写入系统日志
+        getattr(logging, level.lower())(message)
+        
+        # 触发回调
+        for callback in self.callbacks:
+            try:
+                callback(log_message, level)
+            except Exception as e:
+                print(f"日志回调异常: {e}")
+    
+    def add_callback(self, callback: Callable):
         if callback not in self.callbacks:
             self.callbacks.append(callback)
     
     def remove_callback(self, callback: Callable):
-        """移除日志回调函数"""
         if callback in self.callbacks:
             self.callbacks.remove(callback)
-    
-    def log(self, message: str, level: str = "INFO", **kwargs):
-        """记录日志并触发回调"""
-        # 添加时间戳
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        formatted_message = f"[{timestamp}] {message}"
-        
-        # 记录到文件
-        logging.log(getattr(logging, level), message)
-        
-        # 触发所有回调
-        for callback in self.callbacks:
-            try:
-                callback(formatted_message, level)
-            except Exception as e:
-                logging.error(f"日志回调执行失败: {e}")
 
-# 全局日志处理器实例
-logger = LogHandler()
+# 全局单例
+XLogger = XDeployLogger()
