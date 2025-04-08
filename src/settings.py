@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import os
 from typing import Any, Dict, Optional
-from .logger import logger
+from .logger import XLogger  # 将 logger 改为 XLogger
 
 class AppConfig:
     CONFIG_FILE = Path(__file__).parent.parent / "config.json"
@@ -121,7 +121,7 @@ class AppConfig:
             with open(cls.CONFIG_FILE, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            logger.log(f"配置加载失败: {e}", "ERROR")
+            XLogger.log(f"配置加载失败: {e}", "ERROR")
             return {}
     
     @classmethod
@@ -132,5 +132,5 @@ class AppConfig:
                 json.dump(config, f, indent=4)
             return True
         except Exception as e:
-            logger.log(f"配置保存失败: {e}", "ERROR")
+            XLogger.log(f"配置保存失败: {e}", "ERROR")
             return False

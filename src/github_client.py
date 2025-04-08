@@ -3,12 +3,14 @@ import requests
 import aiohttp
 import asyncio
 from typing import List, Dict, Any
-from .logger import logger
+from .logger import XLogger  # 修改这里
+from .errors import GitHubAPIError  # 添加这行导入
 
 class GitHubClient:
     def __init__(self, token=None):
         self.token = token
         self.timeout = 30
+        XLogger.log("初始化GitHub客户端")  # 更新logger使用
 
     def _get_headers(self) -> Dict[str, str]:
         """共享的请求头生成"""
@@ -46,7 +48,7 @@ class GitHubClient:
             return releases
             
         except Exception as e:
-            logger.log(f"发行版获取失败: {e}", "ERROR")
+            XLogger.log(f"发行版获取失败: {e}", "ERROR")  # 更新logger使用
             return []
 
     async def async_get_releases(self, repo_url: str) -> List[Dict]:
@@ -76,7 +78,7 @@ class GitHubClient:
             return releases
                 
         except Exception as e:
-            logger.log(f"发行版获取失败: {e}", "ERROR")
+            XLogger.log(f"发行版获取失败: {e}", "ERROR")  # 更新logger使用
             return []
 
     async def async_get_repo_info(self, repo_url: str) -> Dict:
@@ -136,3 +138,8 @@ class GitHubClient:
         except requests.RequestException as e:
             logging.error(f"分支获取失败: {e}")
             return []
+
+    def _handle_error(self, e: Exception, action: str):
+        error_msg = f"GitHub {action}失败: {str(e)}"
+        XLogger.log(error_msg, "ERROR")  # 更新logger使用
+        raise GitHubAPIError(error_msg)  # 修复拼写错误

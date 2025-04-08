@@ -5,11 +5,12 @@ import psutil
 import subprocess
 import logging
 from typing import Generator, Tuple, Optional, List, Union, Iterator
-from .logger import logger
+from .logger import XLogger  # 修改这里
 
 class ProcessManager:
     def __init__(self):
         self.active_processes = {}
+        XLogger.log("初始化进程管理器")  # 更新logger使用
 
     @staticmethod
     def run_command(
@@ -41,6 +42,8 @@ class ProcessManager:
                 bufsize=1
             )
 
+            XLogger.log(f"执行命令: {' '.join(command)}")  # 更新logger使用
+
             # 实时读取输出
             while True:
                 line = process.stdout.readline()
@@ -56,12 +59,14 @@ class ProcessManager:
                     yield line.rstrip()
 
             if process.returncode != 0:
+                XLogger.log(f"命令执行失败: {process.returncode}", "ERROR")  # 更新logger使用
                 raise subprocess.CalledProcessError(
                     process.returncode, 
                     command
                 )
 
         except Exception as e:
+            XLogger.log(f"命令执行异常: {e}", "ERROR")  # 更新logger使用
             yield f"命令执行失败: {str(e)}"
             raise
 
@@ -99,7 +104,8 @@ class ProcessManager:
             return True
         except psutil.NoSuchProcess:
             return True  # 进程已经不存在，视为成功
-        except Exception:
+        except Exception as e:
+            XLogger.log(f"进程终止失败: {e}", "ERROR")  # 更新logger使用
             return False
 
     def cleanup(self):

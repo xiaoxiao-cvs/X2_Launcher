@@ -1,5 +1,5 @@
 {
-  "name": "maibot-deploy-frontend",
+  "name": "x-deploy-frontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.1.0",
     "axios": "^1.6.7",
     "element-plus": "^2.6.1",
     "vue": "^3.4.21"

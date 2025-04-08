@@ -12,7 +12,7 @@ from packaging import version
 from .github_client import GitHubClient
 from .process_manager import ProcessManager
 from .settings import AppConfig as Settings
-from .logger import logger
+from .logger import XLogger  # 修复这里的导入
 from .errors import DeploymentError, GitHubAPIError, ProcessError, BotError, DependencyError
 
 class VersionController:
@@ -33,7 +33,7 @@ class VersionController:
             
         self.bot_process: Optional[subprocess.Popen] = None
         self.log_callback = None
-        self.logger = logger
+        self.logger = XLogger  # 修复这里的引用
         self._version_cache = {}
         self.venv_cache = {}
 

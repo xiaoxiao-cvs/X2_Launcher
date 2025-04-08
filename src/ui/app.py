@@ -16,7 +16,7 @@ from ..settings import AppConfig as Settings  # 更新为新的配置类
 from ..version_manager import VersionController
 from ..backend import app as backend_app
 from .components import SettingsWindow
-from ..logger import logger
+from ..logger import XLogger  # 更新logger导入
 
 class App(ctk.CTk):
     def __init__(self):
@@ -36,6 +36,9 @@ class App(ctk.CTk):
         # 启动队列处理
         self.after(100, self.process_queues)
         
+        # 使用XLogger替代logger
+        XLogger.log("启动X² Launcher")
+        
     def _init_services(self):
         """初始化基础服务"""
         self.style = ttk.Style()
@@ -50,7 +53,7 @@ class App(ctk.CTk):
         backend_app.init_controller(self.config)
         self.start_backend()
         # 注册日志回调
-        logger.add_callback(self.log_callback)
+        XLogger.add_callback(self.log_callback)
 
     def _init_versions(self):
         """初始化版本列表"""
@@ -63,7 +66,7 @@ class App(ctk.CTk):
                 else:
                     self.after(0, lambda: self.version_combobox.configure(values=["暂无可用版本"]))
             except Exception as e:
-                logging.error(f"版本列表获取失败: {e}")
+                XLogger.log(f"版本列表获取失败: {e}", "ERROR")
                 self.after(0, lambda: self.version_combobox.configure(values=["加载失败"]))
         
         self.thread_pool.submit(fetch_versions)
@@ -179,14 +182,17 @@ class App(ctk.CTk):
                 backend_app.app,
                 host="127.0.0.1",
                 port=8000,
-                log_level="error"
+                log_level="error",
+                reload=True  # 开发环境支持热重载
             )
             server = uvicorn.Server(config)
             await server.serve()
             
         def run():
             try:
-                self.loop.run_until_complete(start_server())
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(start_server())
             except Exception as e:
                 self.log_message(f"后端服务器启动失败: {e}", "ERROR")
                 
@@ -372,7 +378,7 @@ class App(ctk.CTk):
             self.destroy()
             
         except Exception as e:
-            logger.log(f"退出时发生错误: {e}", "ERROR")
+            XLogger.log(f"退出时发生错误: {e}", "ERROR")
             self.quit()
             self.destroy()
 
@@ -387,7 +393,7 @@ class App(ctk.CTk):
             # 继续监听队列
             self.after(100, self.process_queues)
         except Exception as e:
-            logger.log(f"队列处理失败: {e}", "ERROR")
+            XLogger.log(f"队列处理失败: {e}", "ERROR")
             self.after(100, self.process_queues)
 
     def _process_log_queue(self):
@@ -487,7 +493,7 @@ class App(ctk.CTk):
             self.settings.save()
         
         except Exception as e:
-            logger.error(f"设置透明度失败: {e}")
+            XLogger.error(f"设置透明度失败: {e}")
 
     def _apply_alpha_to_color(self, color, alpha):
         """给颜色添加透明度"""
