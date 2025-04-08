@@ -35,7 +35,7 @@ X² Deploy Station 是一个专门为机器人项目设计的部署管理平台�
 - Windows/Linux/MacOS 支持
 
 
-```
+
 生成器
 ## 开发计划 📅
 ## 贡献指南 🤝
