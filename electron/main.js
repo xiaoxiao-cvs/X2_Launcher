@@ -71,8 +71,12 @@ function showErrorPage() {
         </ul>
         </body></html>`)
 }
-
-// 启动Python后端
+/**
+ * 启动Python后端进程。
+ * 该函数会检查Python后端是否已经在运行，如果已经在运行则直接返回。
+ * 如果未运行，则会检查Python解释器和主脚本文件是否存在，如果存在则启动Python后端进程。
+ * 启动时会将工作目录设置为项目根目录，并设置环境变量以禁用Python的输出缓冲。
+ */
 function startPythonBackend() {
     if (pythonProcess) {
         console.log('Python backend is already running')
@@ -80,25 +84,26 @@ function startPythonBackend() {
     }
 
     try {
+        // 获取Python解释器和主脚本文件的路径
         const pythonPath = path.join(__dirname, '../.venv/Scripts/python.exe')
-        const mainPath = path.join(__dirname, '../main.py')
+        const mainPath = path.join(__dirname, '../backend/main.py')  // 更新为backend目录
 
         // 检查 Python 和主文件是否存在
         if (!fs.existsSync(pythonPath)) {
             console.error(`Python 路径不存在: ${pythonPath}`)
             return
         }
-
+    
         if (!fs.existsSync(mainPath)) {
             console.error(`主文件不存在: ${mainPath}`)
             return
         }
-
+        // 启动Python后端进程
         console.log(`启动后端: ${pythonPath} ${mainPath}`)
 
         pythonProcess = spawn(pythonPath, [mainPath], {
-            cwd: path.join(__dirname, '..'),
-            env: { ...process.env, PYTHONUNBUFFERED: '1' },
+            cwd: path.join(__dirname, '..'),// 设置工作目录为项目根目录
+            env: { ...process.env, PYTHONUNBUFFERED: '1' },// // 禁用输出缓冲
             windowsHide: false // 尝试在Windows上保持窗口可见
         })
 
@@ -201,7 +206,7 @@ function setupIPCHandlers() {
                 }
 
                 // 检查脚本路径是否存在
-                const scriptPath = path.join(__dirname, '../src/utils/system_monitor.py');
+                const scriptPath = path.join(__dirname, '../backend/utils/system_monitor.py');
                 if (!fs.existsSync(scriptPath)) {
                     clearTimeout(timeout);
                     console.error(`系统监控脚本不存在: ${scriptPath}`);

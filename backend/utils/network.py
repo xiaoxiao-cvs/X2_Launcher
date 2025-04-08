@@ -2,7 +2,7 @@ import asyncio
 import socket
 import json
 from pathlib import Path
-from src.logger import XLogger
+from .logger import XLogger
 
 async def check_network(timeout=5):
     """检查网络连接"""

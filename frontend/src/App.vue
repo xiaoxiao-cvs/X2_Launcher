@@ -28,8 +28,11 @@
             </div>
           </div>
 
+          <!-- 实例管理页面 -->
+          <InstancesPanel v-else-if="activeTab === 'instances'" />
+
           <!-- 日志页内容 -->
-          <LogsPanel v-else-if="activeTab === 'logs'" />
+          <LogsPanel v-else-if="activeTab === 'logs'" ref="logsPanel" />
 
           <!-- 下载页内容 -->
           <DownloadsPanel v-else-if="activeTab === 'downloads'" />
@@ -46,16 +49,42 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, provide, onMounted } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import SystemStatusCard from './components/SystemStatusCard.vue'
 import PerformanceMonitor from './components/PerformanceMonitor.vue'
 import LogsPanel from './components/LogsPanel.vue'
 import DownloadsPanel from './components/DownloadsPanel.vue'
+import InstancesPanel from './components/InstancesPanel.vue'
+
+// 创建简单的事件总线
+const emitter = {
+  _events: {},
+  on(event, callback) {
+    if (!this._events[event]) this._events[event] = []
+    this._events[event].push(callback)
+  },
+  emit(event, ...args) {
+    if (this._events[event]) {
+      this._events[event].forEach(callback => callback(...args))
+    }
+  },
+  off(event, callback) {
+    if (this._events[event]) {
+      this._events[event] = this._events[event].filter(cb => cb !== callback)
+    }
+  }
+}
+
+// 提供事件总线给所有组件
+provide('emitter', emitter)
 
 // 开发调试模式
 const debugMode = ref(false)
+
+// 日志面板引用
+const logsPanel = ref(null)
 
 // 标签页相关
 const activeTab = ref('home')
@@ -71,6 +100,27 @@ const tabTitles = {
 const handleMenuSelect = (index) => {
   activeTab.value = index
 }
+
+// 监听日志查看事件
+onMounted(() => {
+  emitter.on('show-instance-logs', (instanceName) => {
+    // 切换到日志选项卡
+    activeTab.value = 'logs'
+    // 在下一个渲染周期，告诉日志面板显示特定实例的日志
+    setTimeout(() => {
+      if (logsPanel.value && logsPanel.value.changeLogSource) {
+        logsPanel.value.changeLogSource(instanceName)
+      }
+    }, 100)
+  })
+  
+  // 添加导航事件处理
+  emitter.on('navigate-to-tab', (tabName) => {
+    if (tabTitles[tabName] || tabName === 'home') {
+      activeTab.value = tabName
+    }
+  })
+})
 </script>
 
 <style scoped>
@@ -80,6 +130,7 @@ const handleMenuSelect = (index) => {
   flex-direction: column;
   height: 100vh;
   background-color: #f5f7fa;
+  overflow: hidden; /* 阻止容器产生滚动条 */
 }
 
 /* 调试信息样式 */
@@ -97,13 +148,13 @@ const handleMenuSelect = (index) => {
 .main-content {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  overflow: hidden; /* 确保主内容区域不产生滚动条 */
 }
 
 .content {
   flex: 1;
   padding: 20px;
-  overflow: auto;
+  overflow: auto; /* 只在内容区域允许滚动 */
   background-color: white;
   margin: 16px;
   border-radius: 0 0 8px 0;

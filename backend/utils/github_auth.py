@@ -1,5 +1,5 @@
 import requests
-from ..logger import XLogger
+from .logger import XLogger
 
 class GitHubAuth:
     def __init__(self, token):

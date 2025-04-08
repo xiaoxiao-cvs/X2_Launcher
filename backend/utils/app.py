@@ -8,8 +8,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from ..version_manager import VersionController
-from ..logger import XLogger as logger  # 更新logger导入
+from .version_manager import VersionController
+from .logger import XLogger as logger  # 更新logger导入
 
 app = FastAPI()
 controller = None  # 初始化为 None

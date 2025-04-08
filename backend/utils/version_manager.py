@@ -4,6 +4,7 @@ import sys
 import logging
 import asyncio
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from pathlib import Path
 from typing import List, Optional, Dict, Any
@@ -26,6 +27,18 @@ class VersionController:
         self.base_path = Path(__file__).parent.parent
         self.repo_url = self.settings.get("deployment", "repo_url")
         self.local_path = self.settings.get("deployment", "install_path")
+        
+        # 修复这一行，移除 fallback 参数
+        install_path = self.settings.get("deployment", "install_path")
+        self.instances_dir = install_path if install_path else os.path.join(self.base_path, "maibot_versions")
+        
+        # 确保实例目录存在
+        if not os.path.exists(self.instances_dir):
+            os.makedirs(self.instances_dir)
+        
+        # 监控实例状态
+        self.running_instances = {}
+        self._instance_logs = {}
         
         # 确保目录存在
         if not os.path.exists(self.local_path):
@@ -309,11 +322,12 @@ class VersionController:
     def start_bot(self, version: str) -> bool:
         """使用虚拟环境启动机器人"""
         try:
+            # 停止当前运行的机器人
             if self.bot_process:
                 self.stop_bot()
             
             # 获取版本目录的完整路径
-            version_dir = os.path.join(self.local_path, version)
+            version_dir = os.path.join(self.instances_dir, version)
             bot_path = os.path.join(version_dir, "bot.py")
             
             if not os.path.exists(bot_path):
@@ -329,12 +343,19 @@ class VersionController:
             self._log(f"运行目录: {version_dir}")
             self._log(f"Bot文件: {bot_path}")
             
-            # 直接在版本目录下运行bot.py
-            self.bot_process = subprocess.Popen(
+            # 创建进程，并将输出重定向到回调函数
+            self.bot_process = self.process.run_with_callback(
                 [python_path, "bot.py"],
                 cwd=version_dir,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                callback=lambda line: self._process_bot_output(line, version)
             )
+            
+            # 记录运行状态
+            self.running_instances[version] = {
+                'process': self.bot_process,
+                'start_time': self._format_timestamp(time.time())
+            }
+            
             return True
             
         except Exception as e:
@@ -346,3 +367,147 @@ class VersionController:
         if self.bot_process:
             return self.process.kill_process_tree(self.bot_process.pid)
         return True
+
+    def get_installed_instances(self) -> List[Dict[str, Any]]:
+        """获取所有已安装的实例"""
+        instances = []
+        
+        try:
+            if not os.path.exists(self.instances_dir):
+                return []
+                
+            for dirname in os.listdir(self.instances_dir):
+                path = os.path.join(self.instances_dir, dirname)
+                if os.path.isdir(path):
+                    # 检查是否是有效的bot目录
+                    if os.path.exists(os.path.join(path, "bot.py")):
+                        # 获取创建时间
+                        created_time = os.path.getctime(path)
+                        formatted_time = self._format_timestamp(created_time)
+                        
+                        # 确定实例运行状态
+                        status = "running" if dirname in self.running_instances else "stopped"
+                        
+                        instances.append({
+                            "name": dirname,
+                            "path": path,
+                            "installedAt": formatted_time,
+                            "status": status
+                        })
+        except Exception as e:
+            self._log(f"获取已安装实例失败: {e}", "ERROR")
+        
+        return instances
+    
+    def get_instance_logs(self, instance_name: str) -> List[Dict[str, Any]]:
+        """获取特定实例的日志"""
+        if instance_name not in self._instance_logs:
+            return []
+        return self._instance_logs[instance_name]
+    
+    def _format_timestamp(self, timestamp) -> str:
+        """格式化时间戳为人类可读形式"""
+        from datetime import datetime
+        dt = datetime.fromtimestamp(timestamp)
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    def register_instance_log(self, instance_name: str, log_entry: Dict[str, Any]) -> None:
+        """注册实例日志"""
+        if instance_name not in self._instance_logs:
+            self._instance_logs[instance_name] = []
+            
+        # 限制日志条数，防止内存溢出
+        if len(self._instance_logs[instance_name]) > 1000:
+            self._instance_logs[instance_name] = self._instance_logs[instance_name][-900:]
+            
+        self._instance_logs[instance_name].append(log_entry)
+    
+    async def get_system_logs(self) -> List[Dict[str, Any]]:
+        """获取系统日志"""
+        return self.logger.get_log_history()
+    
+    def delete_instance(self, instance_name: str) -> bool:
+        """删除指定实例"""
+        try:
+            # 确保实例已停止
+            if instance_name in self.running_instances:
+                self.stop_bot()
+                
+            instance_path = os.path.join(self.instances_dir, instance_name)
+            if os.path.exists(instance_path):
+                import shutil
+                shutil.rmtree(instance_path)
+                
+                # 清理相关缓存
+                if instance_name in self.venv_cache:
+                    del self.venv_cache[instance_name]
+                if instance_name in self._instance_logs:
+                    del self._instance_logs[instance_name]
+                if instance_name in self.running_instances:
+                    del self.running_instances[instance_name]
+                    
+                return True
+            return False
+        except Exception as e:
+            self._log(f"删除实例 {instance_name} 失败: {e}", "ERROR")
+            return False
+    
+    def open_folder(self, path: str) -> bool:
+        """打开文件夹"""
+        try:
+            if not os.path.exists(path):
+                self._log(f"路径不存在: {path}", "ERROR")
+                return False
+                
+            if sys.platform == 'win32':
+                os.startfile(path)
+            elif sys.platform == 'darwin':
+                subprocess.Popen(['open', path])
+            else:  # linux或其他系统
+                subprocess.Popen(['xdg-open', path])
+                
+            return True
+        except Exception as e:
+            self._log(f"打开文件夹失败: {e}", "ERROR")
+            return False
+
+    def update_instance(self, instance_name: str) -> bool:
+        """更新指定实例"""
+        instance_path = os.path.join(self.instances_dir, instance_name)
+        
+        # 确保实例已停止
+        if instance_name in self.running_instances:
+            self.stop_bot()
+            
+        return self._update_repository(instance_path)
+
+    def _process_bot_output(self, line: str, instance_name: str) -> None:
+        """处理Bot进程输出"""
+        if not line:
+            return
+            
+        # 尝试解析日志级别，默认为INFO
+        level = "INFO"
+        if "[ERROR]" in line or "Error:" in line:
+            level = "ERROR"
+        elif "[WARNING]" in line or "Warning:" in line:
+            level = "WARNING"
+        
+        # 创建日志条目
+        entry = {
+            "time": self._format_timestamp(time.time()),
+            "message": line.strip(),
+            "type": level,
+            "source": instance_name
+        }
+        
+        # 注册日志
+        self.register_instance_log(instance_name, entry)
+        
+        # 触发WebSocket通知，如果存在
+        self._notify_log_subscribers(entry)
+    
+    def _notify_log_subscribers(self, log_entry: Dict[str, Any]) -> None:
+        """通知日志订阅者"""
+        # 这里将在WebSocket实现时完成
+        pass

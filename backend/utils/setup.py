@@ -1,5 +1,5 @@
 import asyncio
-from src.logger import XLogger
+from .logger import XLogger
 from .network import check_network
 
 async def setup_environment():

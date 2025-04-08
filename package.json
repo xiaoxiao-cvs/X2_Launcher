@@ -7,7 +7,7 @@
     "install-deps": "npm install && cd frontend && npm install",
     "build": "cd frontend && npm run build && cd .. && electron-builder",
     "cleanup": "node scripts/cleanup.js",
-    "predev": "npm run cleanup"
+    "predev": "npm run cleanup && node scripts/create_assets.js"
   },
   "build": {
     "appId": "com.x2.launcher",

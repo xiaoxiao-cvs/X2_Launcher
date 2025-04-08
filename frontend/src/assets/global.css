@@ -1,0 +1,37 @@
+/* 全局样式 */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* 防止html和body元素出现滚动条 */
+}
+
+#app {
+  height: 100%;
+  overflow: hidden; /* 防止根应用容器出现滚动条 */
+}
+
+/* 如果想在某些特定组件中允许滚动，可以为这些组件单独设置 */
+.scrollable-container {
+  overflow: auto;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}

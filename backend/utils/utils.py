@@ -4,7 +4,7 @@ from pathlib import Path
 import requests
 import asyncio
 from typing import Optional
-from .logger import logger
+from .logger import XLogger as logger
 
 async def setup_environment() -> None:
     """异步环境初始化"""
