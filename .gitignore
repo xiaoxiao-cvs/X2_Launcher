@@ -1,9 +1,50 @@
-# Node dependencies
+# 开发环境文件
+.venv/
+venv/
+.env
+.env.local
+*.env
+
+# 构建产物
+/dist/
+/build/
+/out/
+*.spec
+*.log
+
+# 依赖目录
 node_modules/
-
-# Python compiled files
-*.pyc
 __pycache__/
+*.py[cod]
 
-# Config file
-/config.json
+# 编辑器文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 前端特定
+/frontend/dist/
+/frontend/node_modules/
+
+# Python特定
+*.egg-info/
+*.egg
+*.manifest
+*.pot
+
+# 日志文件
+*.log
+logs/
+
+# 安装包
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
