@@ -1,1 +1,9 @@
+# Node dependencies
+node_modules/
+
+# Python compiled files
 *.pyc
+__pycache__/
+
+# Config file
+/config.json
