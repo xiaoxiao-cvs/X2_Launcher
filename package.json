@@ -1,27 +1,49 @@
 {
-  "name": "maibot-deploy-station",
+  "name": "x2-launcher",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "electron/main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder"
+    "dev": "concurrently \"npm:dev:*\"",
+    "dev:python": "python main.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:electron": "wait-on tcp:8000 tcp:3000 && cross-env NODE_ENV=development electron .",
+    "build": "cd frontend && npm run build && electron-builder",
+    "start": "cross-env NODE_ENV=production electron .",
+    "package": "electron-builder"
   },
   "build": {
-    "appId": "com.maibot.deploy",
+    "appId": "com.x2.launcher",
+    "productName": "X² Launcher",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "src/**/*",
+      "main.py",
+      "config.json",
+      "requirements.txt"
+    ],
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.ico"
+      "icon": "assets/app.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "assets/icon.ico",
-      "createDesktopShortcut": true,
-      "include": "installer.nsh"
+      "installerIcon": "assets/app.ico"
     }
   },
   "devDependencies": {
-    "electron": "^35.1.4",
-    "electron-builder": "^26.0.12"
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^29.1.0",
+    "electron-builder": "^24.13.3",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "element-plus": "^2.6.1",
+    "vue": "^3.4.21"
   }
 }

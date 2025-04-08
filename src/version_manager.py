@@ -16,10 +16,10 @@ from .logger import XLogger  # 修复这里的导入
 from .errors import DeploymentError, GitHubAPIError, ProcessError, BotError, DependencyError
 
 class VersionController:
-    def __init__(self, config=None):
-        self.config = config
+    def __init__(self, config: dict = None):
+        self.config = config or {}
         self.settings = Settings()
-        self.github = GitHubClient(config.config.get('github_token') if config else None)
+        self.github = GitHubClient(self.config.get('github_token'))
         self.process = ProcessManager()
         
         # 初始化路径
@@ -33,7 +33,7 @@ class VersionController:
             
         self.bot_process: Optional[subprocess.Popen] = None
         self.log_callback = None
-        self.logger = XLogger  # 修复这里的引用
+        self.logger = XLogger
         self._version_cache = {}
         self.venv_cache = {}
 
