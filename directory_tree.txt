@@ -1,0 +1,43 @@
+X2_Launcher/
+├── assets/                       # 资源文件
+│   ├── app.ico                 # 应用图标
+│   ├── background.jpg         # 背景图片
+│   └── default.png           # 默认图片
+├── electron/                   # Electron相关
+│   ├── main.js               # 主进程
+│   └── preload.js           # 预加载脚本
+├── frontend/                  # 前端代码
+│   ├── dist/                # 构建输出
+│   ├── src/                # 源代码
+│   │   ├── App.vue       # 主组件
+│   │   └── main.js      # 入口文件
+│   ├── index.html        # HTML模板
+│   ├── package.json     # 前端依赖
+│   └── vite.config.js  # Vite配置
+├── scripts/              # 工具脚本
+│   ├── cleanup.js      # 清理脚本
+│   ├── fix_pywin32.py # Win32修复
+│   └── fix_win32.py  # Windows兼容性修复
+├── src/                # 后端源码
+│   ├── auth/         # 认证模块
+│   ├── utils/       # 工具模块
+│   ├── backend/    # 后端服务
+│   ├── config.py  # 配置管理
+│   ├── errors.py # 错误定义
+│   ├── logger.py # 日志管理
+│   ├── main.py   # 后端入口
+│   ├── process_manager.py # 进程管理
+│   ├── settings.py      # 设置管理
+│   └── version_manager.py # 版本管理
+├── .gitignore          # Git忽略文件
+├── build.py           # 构建脚本
+├── config.json       # 应用配置
+├── installer.nsh     # NSIS安装脚本
+├── launcher.py      # 启动器入口
+├── LICENSE         # 许可证(GPL-3.0)
+├── main.js        # 主进程入口
+├── main.py       # 应用入口
+├── package.json # 项目配置
+├── README.md   # 项目说明
+├── requirements.txt # Python依赖
+└── settings.json  # 用户设置

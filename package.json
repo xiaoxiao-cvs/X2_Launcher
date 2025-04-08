@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "concurrently \"npm:dev:*\"",
-    "dev:python": "python main.py",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:electron": "wait-on tcp:8000 tcp:3000 && cross-env NODE_ENV=development electron .",
-    "build": "cd frontend && npm run build && electron-builder",
-    "start": "cross-env NODE_ENV=production electron .",
-    "package": "electron-builder"
+    "dev": "node launch-dev.js",
+    "install-deps": "npm install && cd frontend && npm install",
+    "build": "cd frontend && npm run build && cd .. && electron-builder",
+    "cleanup": "node scripts/cleanup.js",
+    "predev": "npm run cleanup"
   },
   "build": {
     "appId": "com.x2.launcher",
@@ -37,13 +35,11 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "cross-env": "^7.0.3",
     "electron": "^29.1.0",
     "electron-builder": "^24.13.3",
     "wait-on": "^7.2.0"
   },
   "dependencies": {
-    "element-plus": "^2.6.1",
-    "vue": "^3.4.21"
+    "python-shell": "^5.0.0"
   }
 }
