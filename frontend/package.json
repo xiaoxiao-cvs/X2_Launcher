@@ -1,20 +1,23 @@
 {
-  "name": "maibot-deploy-frontend",
-  "private": true,
+  "name": "x2-launcher",
   "version": "0.1.0",
-  "type": "module",
+  "private": true,
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd .. && python -m backend.main",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "axios": "^1.6.7",
-    "element-plus": "^2.6.1",
-    "vue": "^3.4.21"
+    "element-plus": "^2.5.6",
+    "vue": "^3.3.11"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "vite": "^5.1.6"
+    "@element-plus/icons-vue": "^2.3.1",
+    "@vitejs/plugin-vue": "^4.5.2",
+    "concurrently": "^8.2.2",
+    "vite": "^5.0.10"
   }
 }

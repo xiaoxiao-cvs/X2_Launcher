@@ -1,1 +1,56 @@
-*.pyc
+# 开发环境文件
+.venv/
+venv/
+.env
+.env.local
+*.env
+
+# 构建产物
+/dist/
+/build/
+/out/
+*.spec
+*.log
+# 配置文件（如果包含敏感信息）
+/config.json
+
+# npm依赖锁定文件
+/package-lock.json
+/frontend/package-lock.json
+
+# 依赖目录
+node_modules/
+__pycache__/
+*.py[cod]
+
+# 编辑器文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 前端特定
+/frontend/dist/
+/frontend/node_modules/
+
+# Python特定
+*.egg-info/
+*.egg
+*.manifest
+*.pot
+
+# 日志文件
+*.log
+logs/
+
+# 安装包
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
