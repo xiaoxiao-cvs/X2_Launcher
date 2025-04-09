@@ -49,11 +49,12 @@ const handleSelect = (index) => {
 <style scoped>
 .sidebar {
   width: 200px;
-  background-color: white;
-  border-right: 1px solid #e6e6e6;
+  background-color: var(--el-bg-color, white);
+  border-right: 1px solid var(--el-border-color-lighter, #e6e6e6);
   height: 100%;
   overflow-y: auto;
   border-radius: 0 0 0 8px;
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 /* 菜单项动画 */
@@ -61,6 +62,7 @@ const handleSelect = (index) => {
   transition: all 0.3s ease;
   border-radius: 6px;
   margin: 4px 8px;
+  color: var(--el-text-color-primary);
 }
 .menu-item:hover {
   background-color: var(--el-color-primary-light-9);
@@ -75,7 +77,7 @@ const handleSelect = (index) => {
     width: 100%;
     height: auto;
     border-right: none;
-    border-bottom: 1px solid #e6e6e6;
+    border-bottom: 1px solid var(--el-border-color-lighter);
   }
 }
 </style>

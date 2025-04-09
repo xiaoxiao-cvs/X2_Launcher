@@ -6,6 +6,7 @@ import time
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional, List
 
 # 确保项目根目录在Python路径中
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,6 +17,7 @@ from backend.utils.settings import AppConfig as Settings
 from backend.utils.version_manager import VersionController
 from backend.utils.download_manager import DownloadManager
 from backend.utils.install_manager import InstallManager
+from backend.utils.dependency_checker import DependencyChecker
 
 app = FastAPI()
 settings = Settings()
@@ -23,6 +25,7 @@ config = Settings.load_config()
 version_controller = VersionController(config)
 download_manager = DownloadManager()
 install_manager = InstallManager()
+dependency_checker = DependencyChecker()
 
 # WebSocket连接管理
 class ConnectionManager:
@@ -70,6 +73,14 @@ class QQConfigRequest(BaseModel):
     install_napcat: bool = False
     install_nonebot: bool = False
     run_install_script: bool = False
+
+# 安装依赖模型
+class DependencyInstallRequest(BaseModel):
+    packages: Optional[List[str]] = None
+
+# 命令模型
+class CommandRequest(BaseModel):
+    command: str
 
 # API端点定义
 @app.get("/api/versions")
@@ -230,10 +241,79 @@ async def configure_qq_settings(data: QQConfigRequest):
 @app.get("/api/install/status")
 async def get_install_status():
     """获取安装状态"""
-    return {
-        "napcat_installing": install_manager.napcat_installing,
-        "nonebot_installing": install_manager.nonebot_installing
-    }
+    try:
+        status = {
+            "napcat_installing": install_manager.napcat_installing,
+            "nonebot_installing": install_manager.nonebot_installing
+        }
+        
+        # 检查是否有Python进程在运行
+        python_running = False
+        try:
+            # 检查是否有Python进程在运行安装脚本
+            import psutil
+            for proc in psutil.process_iter(['name', 'cmdline']):
+                try:
+                    pinfo = proc.info()
+                    if 'python' in pinfo['name'].lower() and pinfo['cmdline'] and 'pip' in ' '.join(pinfo['cmdline']).lower():
+                        python_running = True
+                        break
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+        except ImportError:
+            # 如果无法导入psutil，则依赖install_manager的状态
+            pass
+        
+        status["python_installing"] = python_running
+        status["installing"] = python_running or status["napcat_installing"] or status["nonebot_installing"]
+        
+        return status
+    except Exception as e:
+        XLogger.log(f"获取安装状态失败: {e}", "ERROR")
+        return {"napcat_installing": False, "nonebot_installing": False, "python_installing": False, "installing": False}
+
+# 依赖检查API
+@app.get("/api/check-dependencies")
+async def check_dependencies():
+    """检查所有依赖库的安装情况"""
+    try:
+        result = dependency_checker.check_all_dependencies()
+        return {"success": True, "results": result}
+    except Exception as e:
+        XLogger.log(f"依赖检查失败: {str(e)}", "ERROR")
+        return {"success": False, "message": str(e)}
+
+@app.post("/api/install-dependencies")
+async def install_dependencies(data: DependencyInstallRequest = None):
+    """安装所有缺失的必要依赖"""
+    try:
+        packages = data.packages if data and data.packages else None
+        result = dependency_checker.install_missing_dependencies(packages)
+        return {"success": result["overall_success"], "results": result["details"]}
+    except Exception as e:
+        XLogger.log(f"依赖安装失败: {str(e)}", "ERROR")
+        return {"success": False, "message": str(e)}
+
+@app.post("/api/instance/{name}/command")
+async def send_instance_command(name: str, data: CommandRequest):
+    """向实例发送命令"""
+    try:
+        # 这里应该实现向实例进程发送命令的逻辑
+        # 例如：向进程的标准输入写入命令
+        instance = version_controller.running_instances.get(name)
+        
+        if not instance or not instance.get("process"):
+            raise HTTPException(status_code=404, detail="实例未运行")
+        
+        # 发送命令到进程
+        process = instance["process"]
+        process.stdin.write(f"{data.command}\n".encode())
+        process.stdin.flush()
+        
+        return {"success": True}
+    except Exception as e:
+        XLogger.log(f"向实例发送命令失败: {str(e)}", "ERROR")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.websocket("/api/logs/ws")
 async def websocket_endpoint(websocket: WebSocket):

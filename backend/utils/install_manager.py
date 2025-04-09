@@ -8,6 +8,7 @@ import asyncio
 import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Callable, Any
+import threading
 
 from .logger import XLogger
 from .process_manager import ProcessManager
@@ -431,20 +432,48 @@ level = 5
             return False
             
         try:
+            # 更改安装状态标志
+            self.napcat_installing = True
+            
             # 运行批处理脚本并实时获取输出
-            for output in self.process.run_command(
+            process = subprocess.Popen(
                 [str(script_path)],
                 cwd=cwd or str(self.base_path),
                 shell=True,
-                realtime_output=True
-            ):
-                self._log(output, source="install")
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
             
-            self._log("安装脚本执行完成", "SUCCESS", "install")
+            # 创建线程来读取输出
+            def reader_thread():
+                try:
+                    for line in iter(process.stdout.readline, ''):
+                        if not line.strip():
+                            continue
+                        self._log(line.strip(), source="install")
+                except Exception as e:
+                    self._log(f"读取安装输出错误: {e}", "ERROR", "install")
+                finally:
+                    # 确保进程对象完成
+                    process.wait()
+                    # 安装结束后重置状态
+                    self.napcat_installing = False
+                    self.nonebot_installing = False
+                    # 添加完成消息
+                    self._log("安装脚本执行完成，Bot已准备就绪！", "SUCCESS", "install")
+            
+            threading.Thread(target=reader_thread, daemon=True).start()
+            
+            # 返回True，表示进程已启动
             return True
             
         except Exception as e:
             self._log(f"安装脚本执行失败: {e}", "ERROR", "install")
+            self.napcat_installing = False
+            self.nonebot_installing = False
             return False
 
     def run_bat_script(self, script_content: str, cwd: Optional[str] = None):

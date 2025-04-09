@@ -99,4 +99,3 @@ python init_napcat.py
 
 echo 安装完成！请运行启动脚本！
 
-pause

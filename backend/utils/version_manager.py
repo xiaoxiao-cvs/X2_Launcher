@@ -511,3 +511,32 @@ class VersionController:
         """通知日志订阅者"""
         # 这里将在WebSocket实现时完成
         pass
+
+    def run_with_callback(self, cmd, cwd=None, callback=None, shell=False):
+        """
+        运行进程并将输出发送到回调函数
+        """
+        # 确保过程允许交互输入
+        process = subprocess.Popen(
+            cmd,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE,  # 允许标准输入
+            shell=shell,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
+        
+        # 创建线程来读取输出并发送到回调
+        def reader_thread():
+            while True:
+                line = process.stdout.readline()
+                if not line and process.poll() is not None:
+                    break
+                if callback and line:
+                    callback(line.rstrip())
+        
+        threading.Thread(target=reader_thread, daemon=True).start()
+        return process

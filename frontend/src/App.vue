@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" :class="{ 'dark-mode': darkMode }">
     <!-- 调试模式显示 -->
     <div v-if="debugMode" class="debug-info">
       <p>Debug Mode: App Component Loaded</p>
@@ -36,6 +36,9 @@
 
           <!-- 下载页内容 -->
           <DownloadsPanel v-else-if="activeTab === 'downloads'" />
+          
+          <!-- 设置页面 -->
+          <SettingsPanel v-else-if="activeTab === 'settings'" />
 
           <!-- 其他页内容 -->
           <div v-else class="tab-content">
@@ -49,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, provide, onMounted } from 'vue'
+import { ref, provide, onMounted, watch } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import SystemStatusCard from './components/SystemStatusCard.vue'
@@ -57,6 +60,10 @@ import PerformanceMonitor from './components/PerformanceMonitor.vue'
 import LogsPanel from './components/LogsPanel.vue'
 import DownloadsPanel from './components/DownloadsPanel.vue'
 import InstancesPanel from './components/InstancesPanel.vue'
+import SettingsPanel from './components/SettingsPanel.vue'
+
+// 深色模式状态
+const darkMode = ref(false);
 
 // 创建简单的事件总线
 const emitter = {
@@ -101,8 +108,27 @@ const handleMenuSelect = (index) => {
   activeTab.value = index
 }
 
+// 监听深色模式变化
+const updateDarkMode = (isDark) => {
+  darkMode.value = isDark;
+};
+
+// 初始化深色模式状态
+const initDarkMode = () => {
+  const savedDarkMode = localStorage.getItem('darkMode');
+  if (savedDarkMode !== null) {
+    darkMode.value = savedDarkMode === 'true';
+  } else {
+    // 检查系统偏好
+    darkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+};
+
 // 监听日志查看事件
 onMounted(() => {
+  // 初始化深色模式
+  initDarkMode();
+
   emitter.on('show-instance-logs', (instanceName) => {
     // 切换到日志选项卡
     activeTab.value = 'logs'
@@ -120,6 +146,9 @@ onMounted(() => {
       activeTab.value = tabName
     }
   })
+  
+  // 添加深色模式变化监听
+  emitter.on('dark-mode-changed', updateDarkMode)
 })
 </script>
 
@@ -129,8 +158,10 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--app-bg-color, #f5f7fa);
   overflow: hidden; /* 阻止容器产生滚动条 */
+  color: var(--el-text-color-primary);
+  transition: background-color 0.3s, color 0.3s;
 }
 
 /* 调试信息样式 */
@@ -155,9 +186,10 @@ onMounted(() => {
   flex: 1;
   padding: 20px;
   overflow: auto; /* 只在内容区域允许滚动 */
-  background-color: white;
+  background-color: var(--el-bg-color, white);
   margin: 16px;
   border-radius: 0 0 8px 0;
+  transition: background-color 0.3s;
 }
 
 /* 页面切换动画 */

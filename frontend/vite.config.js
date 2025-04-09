@@ -11,6 +11,7 @@ export default defineConfig({
         target: 'http://localhost:5000', // 后端服务端口
         changeOrigin: true,
         secure: false,
+        ws: true, // 启用WebSocket代理
       }
     }
   }

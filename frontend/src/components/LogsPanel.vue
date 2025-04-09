@@ -279,6 +279,7 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  color: var(--el-text-color-primary);
 }
 
 .header-actions {
@@ -287,7 +288,7 @@ defineExpose({
 }
 
 .log-container {
-  background: #f9f9f9;
+  background: var(--el-fill-color-lighter);
   border-radius: 8px;
   padding: 12px;
   flex: 1;
@@ -298,7 +299,7 @@ defineExpose({
 .log-item {
   display: flex;
   padding: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--el-border-color-light);
   align-items: flex-start;
 }
 
@@ -315,13 +316,14 @@ defineExpose({
 
 .log-time {
   font-size: 0.8em;
-  color: #999;
+  color: var(--el-text-color-secondary);
   margin-bottom: 4px;
 }
 
 .log-message {
   word-break: break-word;
   white-space: pre-wrap;
+  color: var(--el-text-color-primary);
 }
 
 .log-action {
@@ -341,5 +343,6 @@ defineExpose({
   align-items: center;
   margin-top: 10px;
   padding: 6px;
+  color: var(--el-text-color-primary);
 }
 </style>
