@@ -12,7 +12,9 @@ venv/
 *.spec
 *.log
 # 配置文件（如果包含敏感信息）
-/config.json
+config.json
+*/config.json
+**/config.json
 
 # npm依赖锁定文件
 /package-lock.json
