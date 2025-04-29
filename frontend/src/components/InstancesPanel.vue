@@ -124,7 +124,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowDown } from '@element-plus/icons-vue';
 import axios from 'axios';
 
-// 事件总线，用于与LogsPanel通信
+// 事件总线，用于给log通信
 const emitter = inject('emitter');
 
 // 状态变量
@@ -156,7 +156,7 @@ const startBot = async (instanceName) => {
   }
 };
 
-// 添加启动NapCat功能
+// 启动Napcat功能（待重构）
 const startNapcat = async (instanceName) => {
   try {
     const response = await axios.post(`/api/start/${instanceName}/napcat`);
@@ -172,7 +172,7 @@ const startNapcat = async (instanceName) => {
   }
 };
 
-// 添加启动NoneBot功能
+// 添加启动NoneBot功能（新版已抛弃nb，需要重构。已遗弃）
 const startNonebot = async (instanceName) => {
   try {
     const response = await axios.post(`/api/start/${instanceName}/nonebot`);

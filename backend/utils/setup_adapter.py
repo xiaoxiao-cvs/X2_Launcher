@@ -69,7 +69,7 @@ def setup_nonebot_adapter(base_dir):
             cmd = f'source "{venv_activate}" && nb create'
             os.system(cmd)
         
-        # 检查目录是否创建成功
+        # 检查目录是否创建成功（如果没有就创建一个新的）
         if not adapter_dir.exists():
             print("找不到创建的NoneBot项目目录，请检查nb create的输出信息")
             adapter_dirs = [d for d in base_dir.iterdir() if d.is_dir() and d.name.startswith("nonebot")]
@@ -77,7 +77,7 @@ def setup_nonebot_adapter(base_dir):
                 print(f"找到可能的NoneBot目录: {adapter_dirs[0]}")
                 adapter_dir = adapter_dirs[0]
                 
-                # 重命名为标准名称
+                # 重新命名为新名称
                 try:
                     shutil.move(str(adapter_dirs[0]), str(base_dir / "nonebot-maibot-adapter"))
                     adapter_dir = base_dir / "nonebot-maibot-adapter"

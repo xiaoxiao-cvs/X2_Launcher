@@ -74,7 +74,7 @@ const refreshDownloads = async () => {
     console.log('刷新实例列表...');
     const response = await axios.get('/api/instances');
     if (response.data && response.data.instances) {
-      // 转换API返回的实例为我们想要的格式
+      // API返回的格式可能不是我们想要的，转换一个通用格式
       installHistory.value = response.data.instances.map(instance => ({
         id: instance.name,
         name: instance.name,
@@ -105,7 +105,7 @@ const toggleInstance = async (instance) => {
         ElMessage.success(`${instance.name} 已停止`);
         instance.status = 'stopped';
         
-        // 如果有正在查看的控制台，关闭它
+        // 如果有正在查看的终端，关闭他
         if (runningInstanceId.value === instance.id) {
           closeConsole();
         }
@@ -126,7 +126,7 @@ const toggleInstance = async (instance) => {
       }
     }
     
-    // 刷新实例列表以获取最新状态
+    // 刷新实例以获取最新的实例状态，以便用户定位问题
     setTimeout(refreshDownloads, 1000);
     
   } catch (error) {

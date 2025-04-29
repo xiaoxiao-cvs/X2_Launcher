@@ -1,3 +1,4 @@
+<!--用于主页面的性能监控，待重构（CPU占用，内存占用，网络统计，Bot＋启动器一共用了多少系统资源，待定～）-->
 <template>
   <el-card shadow="hover" class="status-card">
     <template #header>
@@ -134,7 +135,7 @@ const getMemoryFree = () => {
   return 0;
 }
 
-// 获取内存使用百分比
+// 获取内存占用的百分比
 const getMemoryPercent = () => {
   if (performance.value.memory?.usage !== undefined) return performance.value.memory.usage;
   if (performance.value.memory?.percent !== undefined) return performance.value.memory.percent;
