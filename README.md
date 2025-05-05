@@ -60,13 +60,7 @@ X² Deploy Station 是一个专门为机器人项目设计的部署管理平台�
 
 ## 贡献指南 🤝
 
-欢迎提交 Pull Request 或创建 Issue！
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+欢迎提交 Pull Request 或创建 issues！
 
 ## 问题反馈 🐛
 
