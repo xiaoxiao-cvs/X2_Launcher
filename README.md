@@ -38,56 +38,6 @@ X² Deploy Station 是一个专门为机器人项目设计的部署管理平台�
 
 这是X2 Launcher，一个用于管理和运行MaiBot的启动器。
 
-## 初始安装
-
-首次运行项目前，请执行以下步骤安装必要的依赖：
-
-1. 确保已安装Node.js (v16+)和Python (v3.9+)
-2. 克隆项目并进入项目目录：
-   ```
-   git clone <repo-url>
-   cd X2_Launcher
-   ```
-3. 安装Node.js依赖：
-   ```
-   npm install
-   ```
-4. 运行依赖安装脚本安装Python依赖：
-   ```
-   install_dependencies.bat
-   ```
-   这个脚本会创建Python虚拟环境并安装所有必要的依赖。
-
-## 运行开发环境
-
-安装完成后，运行以下命令启动开发环境：
-
-```
-npm run dev
-```
-
-## 常见问题
-
-### 缺少依赖
-
-如果出现"No module named 'xxx'"错误，请执行以下操作：
-
-1. 运行`install_dependencies.bat`脚本安装所有依赖
-2. 或者在应用内点击"检查依赖"按钮来检查和安装缺失的依赖
-
-### app.ico错误
-
-需要添加一个图标文件到assets目录：
-1. 创建一个名为`app.ico`的图标文件
-2. 将其放置在项目的`assets`目录下
-
-### 连接后端失败
-
-如果前端无法连接到后端，请检查：
-1. 后端服务是否已启动
-2. 检查日志中是否有Python依赖缺失的错误
-3. 运行`install_dependencies.bat`安装所需依赖
-
 ## 开发计划 📅
 
 ### 近期计划 (v1.x)
