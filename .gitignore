@@ -56,3 +56,5 @@ logs/
 *.pkg
 *.deb
 *.rpm
+
+/.VSCodeCounter/
