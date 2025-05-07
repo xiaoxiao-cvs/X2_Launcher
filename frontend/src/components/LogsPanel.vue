@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, defineExpose } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { WarningFilled, SuccessFilled, InfoFilled, DocumentCopy, Download } from '@element-plus/icons-vue'
 import axios from 'axios';
@@ -254,6 +254,7 @@ onMounted(async () => {
 })
 
 // 暴露方法给父组件调用
+// defineExpose已经是编译宏，不需要导入
 defineExpose({
   changeLogSource(source) {
     currentLogSource.value = source;
@@ -266,83 +267,6 @@ defineExpose({
 });
 </script>
 
-<style scoped>
-.logs-tab {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.log-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  color: var(--el-text-color-primary);
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-}
-
-.log-container {
-  background: var(--el-fill-color-lighter);
-  border-radius: 8px;
-  padding: 12px;
-  flex: 1;
-  overflow-y: auto;
-  max-height: calc(100vh - 240px); /* 确保不超出视口 */
-}
-
-.log-item {
-  display: flex;
-  padding: 8px;
-  border-bottom: 1px solid var(--el-border-color-light);
-  align-items: flex-start;
-}
-
-.log-icon {
-  margin-right: 10px;
-  padding-top: 2px;
-}
-
-.log-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.log-time {
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 4px;
-}
-
-.log-message {
-  word-break: break-word;
-  white-space: pre-wrap;
-  color: var(--el-text-color-primary);
-}
-
-.log-action {
-  margin-left: 8px;
-}
-
-.empty-logs {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-}
-
-.log-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-  padding: 6px;
-  color: var(--el-text-color-primary);
-}
+<style>
+@import '../assets/css/logsPanel.css';
 </style>

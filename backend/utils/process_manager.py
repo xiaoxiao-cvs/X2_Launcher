@@ -15,6 +15,21 @@ class ProcessManager:
         self.base_path = Path(__file__).parent.parent
         XLogger.log("初始化进程管理器")
 
+    # 新增公共进程创建方法
+    def _create_process(self, cmd, cwd=None, **kwargs) -> subprocess.Popen:
+        """统一进程创建逻辑"""
+        return subprocess.Popen(
+            cmd,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,
+            text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
+            **kwargs
+        )
+
+    # 修改原run_command方法
     def run_command(
         self,
         command: Union[str, List[str]],
@@ -25,15 +40,7 @@ class ProcessManager:
     ) -> Iterator[str]:
         """执行命令并返回输出迭代器"""
         try:
-            process = subprocess.Popen(
-                command,
-                cwd=cwd,
-                env=env or os.environ.copy(),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                shell=shell,
-                text=True
-            )
+            process = self._create_process(command, cwd=cwd, shell=shell, env=env)
             
             self.active_processes[process.pid] = process
             
@@ -42,6 +49,11 @@ class ProcessManager:
                 if not line and process.poll() is not None:
                     break
                 if line and realtime_output:
+                    yield line.rstrip()
+                    
+            # 读取剩余的stderr输出
+            for line in process.stderr:
+                if realtime_output:
                     yield line.rstrip()
                     
             if process.returncode != 0:
@@ -53,6 +65,7 @@ class ProcessManager:
             XLogger.log(f"命令执行异常: {e}", "ERROR")
             raise
 
+    # 修改原run_with_callback方法 
     def run_with_callback(self, cmd: List[str], cwd: str = None, 
                           callback: Callable[[str], None] = None) -> subprocess.Popen:
         """
@@ -73,14 +86,7 @@ class ProcessManager:
             stream.close()
         
         try:
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=cwd,
-                bufsize=1,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-            )
+            process = self._create_process(cmd, cwd=cwd)
             
             # 创建读取线程
             stdout_thread = threading.Thread(

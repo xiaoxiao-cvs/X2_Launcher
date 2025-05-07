@@ -49,8 +49,9 @@
           :show-text="false"
           :stroke-width="12"/>
         <div class="metric-details">
-          <span>核心数: {{ performance.cpu?.cores || 0 }}</span>
+          <span>{{ getCpuModel() }}</span>
           <span>频率: {{ formatCpuFrequency(performance.cpu?.frequency) }}</span>
+          <span>核心数: {{ performance.cpu?.cores || 0 }}</span>
         </div>
       </div>
       
@@ -91,10 +92,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, inject } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Cpu, Monitor, Connection, RefreshRight as Refresh } from '@element-plus/icons-vue'
 import axios from 'axios'
+
+// 获取electronAPI
+const electronAPI = inject('electronAPI');
 
 // 性能监控相关
 const performance = ref({
@@ -114,6 +118,19 @@ const getCpuUsage = () => {
   if (performance.value.cpu?.usage !== undefined) return performance.value.cpu.usage;
   if (performance.value.cpu?.percent !== undefined) return performance.value.cpu.percent;
   return 0;
+}
+
+// 获取CPU型号名称，确保正确显示
+const getCpuModel = () => {
+  if (performance.value.cpu?.model) {
+    // 处理型号名称，确保不超过一定长度
+    let model = performance.value.cpu.model;
+    if (model.length > 25) {
+      return model.substring(0, 22) + '...';
+    }
+    return model;
+  }
+  return '未知处理器';
 }
 
 // 获取内存总量
@@ -176,11 +193,31 @@ const refreshPerformance = async () => {
   performanceError.value = null;
   
   try {
+    // 在开始加载之前先显示初始化数据，避免空白状态
+    if (!performance.value.cpu?.cores) {
+      performance.value = getFallbackMetrics();
+    }
+    
     console.log('正在请求系统性能数据...');
-    const result = await window.electronAPI.getSystemMetrics().catch(err => {
-      console.error('IPC调用异常:', err);
-      throw new Error(`IPC错误: ${err.message || '未知错误'}`);
-    });
+    
+    // 修复: 安全地访问electronAPI
+    let result;
+    if (window.electronAPI) {
+      // 请求详细版系统信息
+      result = await window.electronAPI.getSystemMetrics(true).catch(err => {
+        console.error('IPC调用异常:', err);
+        throw new Error(`IPC错误: ${err.message || '未知错误'}`);
+      });
+    } else if (electronAPI) {
+      // 请求详细版系统信息
+      result = await electronAPI.getSystemMetrics(true).catch(err => {
+        throw new Error(`API错误: ${err.message || '未知错误'}`);
+      });
+    } else {
+      // 如果没有API可用，使用备用数据
+      result = getFallbackMetrics();
+      console.log('没有可用的electronAPI, 使用备用数据');
+    }
     
     console.log('接收到性能数据:', result);
     
@@ -208,6 +245,13 @@ const refreshPerformance = async () => {
     }
 
     performance.value = result;
+    
+    // 添加强制渲染延迟，确保布局稳定
+    setTimeout(() => {
+      // 触发窗口的resize事件，让图表重新计算尺寸
+      window.dispatchEvent(new Event('resize'));
+    }, 300);
+    
   } catch (err) {
     console.error('性能获取错误:', err);
     performanceError.value = err;
@@ -224,9 +268,15 @@ const refreshPerformance = async () => {
   }
 }
 
-// 添加获取回退指标的函数
+// 添加获取回退指标的函数 - 更详细的模拟数据
 const getFallbackMetrics = () => ({
-  cpu: { usage: 25, percent: 25, cores: 4, frequency: 2400 },  // 频率单位统一为MHz
+  cpu: { 
+    usage: 25, 
+    percent: 25, 
+    cores: 8, 
+    frequency: 3200, 
+    model: 'Intel Core i7-10700K' 
+  },
   memory: { 
     total: 16 * 1024 * 1024 * 1024,
     used: 8 * 1024 * 1024 * 1024,
@@ -234,14 +284,22 @@ const getFallbackMetrics = () => ({
     usage: 50,
     percent: 50
   },
-  network: { sent: 0, received: 0, sentRate: 0, receivedRate: 0 }
+  network: { 
+    sent: 0, 
+    received: 0, 
+    sentRate: 0, 
+    receivedRate: 0 
+  }
 })
 
-// 获取进度条颜色
+// 获取进度条颜色 - 修改为使用主题色
 const getProgressColor = (percentage) => {
-  if (percentage < 60) return '#67C23A'  // 绿色
-  if (percentage < 80) return '#E6A23C'  // 黄色
-  return '#F56C6C'  // 红色
+  // 获取当前主题色
+  const themeColor = window.currentThemeColor || '#4a7eff';
+  
+  if (percentage < 60) return themeColor;  // 使用主题色
+  if (percentage < 80) return '#E6A23C';  // 黄色
+  return '#F56C6C';  // 红色
 }
 
 const installPsutil = async () => {
@@ -267,14 +325,50 @@ const installPsutil = async () => {
   }
 };
 
+// 注册electronAPI
 onMounted(() => {
   console.log('PerformanceMonitor mounted');
+  // 提供electronAPI到全局
+  if (!window.electronAPI && electronAPI) {
+    window.electronAPI = electronAPI;
+  }
+  
   // 立即刷新一次性能数据
   refreshPerformance();
   
   // 设置定时刷新
   refreshInterval = setInterval(refreshPerformance, 5000);
+  
+  // 添加窗口尺寸变化监听器，确保图表尺寸正确
+  window.addEventListener('resize', debounce(() => {
+    console.log('窗口大小变化，更新性能图表');
+    // 可以根据主题色更新图表
+    updateChartColors();
+  }, 200));
 })
+
+// 添加防抖函数，避免频繁触发resize事件
+function debounce(func, wait) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(context, args);
+    }, wait);
+  };
+}
+
+// 添加更新图表颜色的函数
+function updateChartColors() {
+  // 此处可以调用图表库的方法更新颜色
+  // 如果使用echarts，可以通过获取实例来更新
+  if (window.currentThemeColor) {
+    // 这里假设有图表实例需要更新
+    console.log('更新图表颜色为:', window.currentThemeColor);
+  }
+}
 
 onBeforeUnmount(() => {
   // 清除定时器
@@ -284,97 +378,36 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
+<style>
+@import '../assets/css/performanceMonitor.css';
+
+/* 添加响应式样式以适应侧边栏展开 */
 .status-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border-radius: 8px;
-  background-color: var(--el-bg-color);
-  color: var(--el-text-color-primary);
-}
-.status-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
 }
 
-.card-header {
+/* 调整指标标题和值的对齐方式 */
+.metric-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: inherit;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.error-tag {
-  margin-right: 4px;
-}
-
-.refresh-btn {
-  font-size: 14px;
-}
-
-.refresh-btn {
-  margin-left: auto;
-}
-
-/* 性能监控样式 */
-.performance-dashboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.metric-item {
-  padding: 12px;
-  background: var(--el-fill-color-lighter);
-  border-radius: 8px;
-  color: var(--el-text-color-primary);
-}
-
-.metric-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.metric-header .el-icon {
-  margin-right: 8px;
-  color: var(--el-color-primary);
+  width: 100%;
 }
 
 .metric-value {
-  margin-left: auto;
-  font-weight: 600;
+  margin-left: auto; /* 确保值靠右对齐 */
+  font-weight: bold;
 }
 
-.metric-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
-}
-
-.network-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 0.9em;
-}
-
-.missing-dep-warning {
-  margin-bottom: 10px;
-}
-
+/* 确保内容在小屏幕上也能正确显示 */
 @media (max-width: 768px) {
-  .performance-dashboard {
-    grid-template-columns: 1fr;
+  .metric-item {
+    padding: 10px;
+  }
+  
+  .metric-header {
+    flex-wrap: wrap;
   }
 }
 </style>

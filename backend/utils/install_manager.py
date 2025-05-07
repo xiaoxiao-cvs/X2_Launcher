@@ -199,32 +199,9 @@ class InstallManager:
         
         config_path = Path(path_str)
         
-        # 确保目录存在
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # 如果文件不存在，创建模板
-        if not config_path.exists():
-            self._log(f"配置文件不存在，创建模板: {config_path}")
-            default_config = """[bot]
-# qq账号
-qq = 123456789
-# 密码，可为空，需要时会让你扫码登录
-password = ""
-# 登录协议 ikun_ws pad android watch
-# 目前ikun_ws协议支持最全
-protocol = "ikun_ws"
-# NapCat的websocket地址
-universal = ["ws://127.0.0.1:8095"]
-
-[bots]
-[[bots.admins]]
-# 主人qq account
-account = 123456789
-# 权限等级
-level = 5
-"""
-            with open(config_path, 'w', encoding='utf-8') as f:
-                f.write(default_config)
+        # 删除重复的目录创建和模板生成代码
+        # 替换为：
+        self._handle_config_path(config_path)
         
         # 读取原始文件内容
         with open(config_path, 'rb') as f:
@@ -341,18 +318,18 @@ level = 5
         if not self.is_valid_qq(qq_number):
             self._log(f"无效的QQ号: {qq_number}", "ERROR", "napcat")
             return False
-            
+        
         if self.napcat_installing:
             self._log("NapCat正在安装中，请等待...", "WARNING", "napcat")
             return False
-        
+    
         # 检查依赖
         if aiohttp is None:
             self._log("缺少aiohttp依赖，无法下载NapCat", "ERROR", "napcat")
             return False
-        
+    
         self.napcat_installing = True
-        
+    
         try:
             # 下载NapCat
             zip_path = self.base_path / "downloads" / "napcat.zip"
@@ -374,11 +351,11 @@ level = 5
             
             self._log(f"NapCat安装成功，QQ: {qq_number}", "SUCCESS", "napcat")
             return True
-            
+        
         except Exception as e:
             self._log(f"NapCat安装失败: {e}", "ERROR", "napcat")
             return False
-            
+        
         finally:
             self.napcat_installing = False
     
@@ -506,3 +483,37 @@ level = 5
             # 删除临时批处理文件
             if bat_file.exists():
                 bat_file.unlink()
+
+# 新增公共配置处理方法
+def _handle_config_path(self, config_path: Path) -> None:
+    """统一处理配置路径"""
+    # 确保目录存在
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # 如果文件不存在，创建模板
+    if not config_path.exists():
+        self._log(f"配置文件不存在，创建模板: {config_path}")
+        self._create_default_config(config_path)
+
+def _create_default_config(self, config_path: Path) -> None:
+    """创建默认配置文件"""
+    default_config = \"\"\"[bot]
+# qq账号
+qq = 123456789
+# 密码，可为空，需要时会让你扫码登录
+password = ""
+# 登录协议 ikun_ws pad android watch
+# 目前ikun_ws协议支持最全
+protocol = "ikun_ws"
+# NapCat的websocket地址
+universal = ["ws://127.0.0.1:8095"]
+
+[bots]
+[[bots.admins]]
+# 主人qq account
+account = 123456789
+# 权限等级
+level = 5
+"""
+    with open(config_path, 'w', encoding='utf-8') as f:
+        f.write(default_config)

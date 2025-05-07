@@ -39,10 +39,18 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, watch, nextTick } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import axios from 'axios';
 
+// ===================================
+// 这些是Vue编译器宏，不需要导入
+// 编辑器可能会报错，但Vue会正确超飞它们
+// ===================================
+
+/**
+ * 组件属性
+ */
 const props = defineProps({
   visible: Boolean,
   instanceId: String,
@@ -51,6 +59,9 @@ const props = defineProps({
   isRunning: Boolean
 });
 
+/**
+ * 组件事件
+ */
 const emit = defineEmits(['update:visible', 'refresh', 'close', 'stop']);
 
 const commandInput = ref('');
@@ -158,61 +169,6 @@ watch(() => props.logs.length, () => {
 });
 </script>
 
-<style scoped>
-.console-container {
-  position: relative;
-  height: 400px;
-}
-
-.console-output {
-  height: 100%;
-  overflow-y: auto;
-  background: #1e1e1e;
-  border-radius: 4px;
-  padding: 8px;
-  font-family: Consolas, Monaco, 'Andale Mono', monospace;
-  font-size: 13px;
-  color: #d4d4d4;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.console-input {
-  margin-top: 16px;
-}
-
-.commands-help {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #909399;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.log-item {
-  margin-bottom: 2px;
-  padding: 2px 0;
-}
-
-.log-content.error {
-  color: #ff6b6b;
-}
-
-.log-content.warning {
-  color: #ffb347;
-}
-
-.log-content.success {
-  color: #42b983;
-}
-
-.log-content.info {
-  color: #d4d4d4;
-}
-
-.log-content.command {
-  color: #68b5e1;
-  font-weight: bold;
-}
+<style>
+@import '../../assets/css/downloads/consoleDialog.css';
 </style>

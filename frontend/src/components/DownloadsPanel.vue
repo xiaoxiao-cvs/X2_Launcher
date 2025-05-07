@@ -437,36 +437,6 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
-.downloads-tab {
-  width: 100%;
-}
-
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.section {
-  margin-bottom: 24px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.section-title {
-  font-weight: bold;
-  font-size: 16px;
-  margin-bottom: 12px;
-  color: var(--el-color-primary);
-  border-bottom: 1px solid #ebeef5;
-  padding-bottom: 8px;
-}
+<style>
+@import '../assets/css/downloadsPanel.css';
 </style>

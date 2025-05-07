@@ -126,15 +126,26 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, defineProps, defineEmits, onUnmounted, inject } from 'vue';
+import { ref, computed, watch, onUnmounted, inject } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Download, User } from '@element-plus/icons-vue';
 import axios from 'axios';
 
+// ===================================
+// 这些是Vue编译器宏，不需要导入
+// 编辑器可能会报错，但Vue会正确处理它们
+// ===================================
+
+/**
+ * 组件属性
+ */
 const props = defineProps({
   logCallback: Function
 });
 
+/**
+ * 组件事件
+ */
 const emit = defineEmits(['refresh-instances', 'add-log']);
 
 // 实例安装状态变量
@@ -549,108 +560,6 @@ defineExpose({
 });
 </script>
 
-<style scoped>
-.install-container {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.error-message {
-  color: #F56C6C;
-  margin-top: 8px;
-  font-size: 13px;
-}
-
-.repo-info {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #909399;
-}
-
-.repo-info a {
-  color: var(--el-color-primary);
-  text-decoration: none;
-}
-
-.repo-info a:hover {
-  text-decoration: underline;
-}
-
-/* Bot配置样式 */
-.bot-config {
-  margin-top: 20px;
-}
-
-.config-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 16px;
-}
-
-.option-item {
-  flex: 1;
-  background: white;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #ebeef5;
-  transition: all 0.3s;
-}
-
-.option-item:hover {
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.option-title {
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.option-desc {
-  font-size: 12px;
-  color: #909399;
-}
-
-.qq-input {
-  margin-bottom: 16px;
-}
-
-.input-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-}
-
-.ports-config {
-  margin-top: 16px;
-}
-
-.ports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.port-item {
-  flex: 1;
-}
-
-.port-desc {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-}
-
-.install-tips {
-  margin-top: 16px;
-}
-
-@media (max-width: 768px) {
-  .install-container, .config-options {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
+<style>
+@import '../../assets/css/downloads/installConfig.css';
 </style>

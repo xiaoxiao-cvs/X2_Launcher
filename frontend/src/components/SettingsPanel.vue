@@ -22,6 +22,21 @@
         </div>
       </div>
 
+      <!-- 主题色选择 -->
+      <div class="setting-item">
+        <span class="setting-label">主题色</span>
+        <div class="setting-control color-theme-selector">
+          <div 
+            v-for="(color, name) in themeColors" 
+            :key="name"
+            class="color-item" 
+            :class="{ active: selectedTheme === name }"
+            :style="{ backgroundColor: color }"
+            @click="selectTheme(name, color)"
+          ></div>
+        </div>
+      </div>
+
       <!-- 界面动画效果 -->
       <div class="setting-item">
         <span class="setting-label">界面动画效果</span>
@@ -92,32 +107,43 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue';
+import { ref, onMounted, inject, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Moon, Sunny } from '@element-plus/icons-vue';
 
-// 深色模式设置
+// 获取共享状态
+const emitter = inject('emitter');
+const appDarkMode = inject('darkMode', ref(false)); // 使用App.vue提供的darkMode
+
+// 设置状态
 const darkMode = ref(false);
 const enableAnimations = ref(true);
 const density = ref('default');
 const autoCheckUpdates = ref(true);
 const logLevel = ref('info');
 
+// 主题色选项
+const themeColors = {
+  blue: '#4a7eff',
+  green: '#42b983',
+  purple: '#9370db',
+  orange: '#e67e22',
+  pink: '#e84393',
+  teal: '#00b894'
+};
+
+const selectedTheme = ref('blue'); // 默认主题色
 const checkingUpdates = ref(false);
+
+// 同步深色模式状态
+watch(appDarkMode, (newValue) => {
+  darkMode.value = newValue;
+});
 
 // 获取本地存储中的设置
 onMounted(() => {
-  // 加载深色模式设置
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode !== null) {
-    darkMode.value = savedDarkMode === 'true';
-    applyDarkMode(darkMode.value);
-  } else {
-    // 检查系统偏好
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    darkMode.value = prefersDark;
-    applyDarkMode(prefersDark);
-  }
+  // 同步深色模式设置
+  darkMode.value = appDarkMode.value;
 
   // 加载其他的配置
   const savedAnimations = localStorage.getItem('enableAnimations');
@@ -139,31 +165,68 @@ onMounted(() => {
   if (savedAutoCheck !== null) {
     autoCheckUpdates.value = savedAutoCheck === 'true';
   }
+  
+  // 加载保存的主题色
+  const savedTheme = localStorage.getItem('themeColor');
+  if (savedTheme && themeColors[savedTheme]) {
+    selectedTheme.value = savedTheme;
+    applyThemeColor(themeColors[savedTheme]);
+  }
 });
 
-// 获取事件总线
-const emitter = inject('emitter', null);
-
-// 切换深色模式
+// 切换深色模式 - 通过事件总线通知App.vue
 const toggleDarkMode = (value) => {
   localStorage.setItem('darkMode', value);
-  applyDarkMode(value);
   
-  // 通知系统深色模式已更改
+  // 通过事件总线通知应用
   if (emitter) {
     emitter.emit('dark-mode-changed', value);
   }
 };
 
-// 应用深色模式
-const applyDarkMode = (isDark) => {
-  if (isDark) {
-    document.documentElement.classList.add('dark-mode');
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark-mode');
-    document.documentElement.setAttribute('data-theme', 'light');
+// 选择主题色
+const selectTheme = (name, color) => {
+  selectedTheme.value = name;
+  localStorage.setItem('themeColor', name);
+  applyThemeColor(color);
+};
+
+// 应用主题色到CSS变量
+const applyThemeColor = (color) => {
+  document.documentElement.style.setProperty('--el-color-primary', color);
+  document.documentElement.style.setProperty('--primary-color', color);
+  
+  // 生成主题色的亮色和暗色变体
+  const lightenColor = adjustColorBrightness(color, 20);
+  const darkenColor = adjustColorBrightness(color, -20);
+  
+  document.documentElement.style.setProperty('--primary-light', lightenColor);
+  document.documentElement.style.setProperty('--primary-dark', darkenColor);
+  
+  // 通知应用主题色已变更
+  if (emitter) {
+    emitter.emit('theme-color-changed', color);
   }
+};
+
+// 颜色亮度调整工具函数
+const adjustColorBrightness = (hex, percent) => {
+  // 将十六进制颜色转换为RGB
+  let r = parseInt(hex.substring(1, 3), 16);
+  let g = parseInt(hex.substring(3, 5), 16);
+  let b = parseInt(hex.substring(5, 7), 16);
+
+  // 调整亮度
+  r = Math.min(255, Math.max(0, r + (r * percent / 100)));
+  g = Math.min(255, Math.max(0, g + (g * percent / 100)));
+  b = Math.min(255, Math.max(0, b + (b * percent / 100)));
+
+  // 转回十六进制
+  const rHex = Math.round(r).toString(16).padStart(2, '0');
+  const gHex = Math.round(g).toString(16).padStart(2, '0');
+  const bHex = Math.round(b).toString(16).padStart(2, '0');
+  
+  return `#${rHex}${gHex}${bHex}`;
 };
 
 // 切换动画效果
@@ -203,60 +266,60 @@ const checkForUpdates = async () => {
 watchDensity(density.value);
 </script>
 
-<style scoped>
+<style>
+@import '../assets/css/settingsPanel.css';
+
+/* 添加设置面板的整体样式，确保不被侧边栏遮挡 */
 .settings-tab {
+  padding: 20px;
+  box-sizing: border-box;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  overflow-y: auto;
+  height: 100%;
 }
 
-.section-title {
-  margin-bottom: 20px;
-  color: var(--el-color-primary);
-}
-
+/* 调整卡片样式 */
 .settings-card {
   margin-bottom: 20px;
+  max-width: 800px;
   transition: all 0.3s ease;
 }
 
-.settings-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* 主题色选择器样式 */
+.color-theme-selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.card-header {
+.color-item {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.color-item.active {
+  border-color: var(--text-color);
+}
+
+.color-item.active::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
   font-weight: bold;
-}
-
-.setting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.setting-item:last-child {
-  border-bottom: none;
-}
-
-.setting-label {
   font-size: 14px;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
-.setting-control {
-  display: flex;
-  align-items: center;
-}
-
-.about-content {
-  padding: 8px 0;
-}
-
-/* 深色模式样式覆盖 */
-:deep(.dark-mode) .settings-card {
-  background-color: var(--el-bg-color);
-  color: var(--el-text-color-primary);
+.color-item:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.2);
 }
 </style>

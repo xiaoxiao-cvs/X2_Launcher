@@ -3,21 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "install-deps": "node ./scripts/install-deps.js",
+    "dev": "npm run install-deps && vite",
     "dev:backend": "cd .. && python -m backend.main",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "axios": "^1.6.7",
-    "element-plus": "^2.5.6",
-    "vue": "^3.3.11"
+    "axios": "1.6.7",
+    "echarts": "5.4.3",
+    "element-plus": "2.5.6",
+    "vue": "3.3.11"
   },
   "devDependencies": {
-    "@element-plus/icons-vue": "^2.3.1",
-    "@vitejs/plugin-vue": "^4.5.2",
-    "concurrently": "^8.2.2",
-    "vite": "^5.0.10"
+    "@element-plus/icons-vue": "2.3.1",
+    "@vitejs/plugin-vue": "4.5.2",
+    "autoprefixer": "10.4.16",
+    "concurrently": "8.2.2",
+    "postcss-preset-env": "10.1.6",
+    "vite": "5.0.10"
   }
 }

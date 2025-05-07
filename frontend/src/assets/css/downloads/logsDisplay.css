@@ -1,0 +1,186 @@
+.log-title-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.log-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.shell-container {
+  max-height: 500px;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter, #f5f5f5);
+}
+
+/* 终端样式 */
+.terminal {
+  background: var(--terminal-bg, #0d0d0d);
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: 'Courier New', Courier, monospace;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.terminal-header {
+  background: #323233;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+}
+
+.terminal-controls {
+  display: flex;
+  gap: 6px;
+  margin-right: 16px;
+}
+
+.control {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.close {
+  background-color: #ff605c;
+}
+
+.minimize {
+  background-color: #ffbd44;
+}
+
+.maximize {
+  background-color: #00ca4e;
+}
+
+.terminal-title {
+  color: var(--terminal-text, #d9d9d9);
+  font-size: 13px;
+  flex: 1;
+  text-align: center;
+}
+
+.terminal-body {
+  padding: 12px;
+  color: var(--terminal-text, #d9d9d9);
+  font-size: 14px;
+}
+
+.terminal-line {
+  line-height: 1.4;
+  margin-bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.command-prompt {
+  color: #77e083;
+  margin-right: 5px;
+}
+
+.command-content {
+  color: var(--terminal-text, #d9d9d9);
+}
+
+.command-line {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 2px 0;
+}
+
+.important-line {
+  background-color: rgba(65, 105, 225, 0.1);
+  font-weight: 500;
+  border-left: 2px solid #4169e1;
+  padding-left: 4px;
+}
+
+.timestamp {
+  color: #888;
+  margin-right: 10px;
+  font-size: 12px;
+  min-width: 80px;
+  display: inline-block;
+}
+
+.prefix {
+  margin-right: 8px;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 3px;
+  min-width: 70px;
+  display: inline-block;
+  text-align: center;
+  font-size: 12px;
+}
+
+.prefix.pip {
+  color: #2273c3;
+  background-color: rgba(34, 115, 195, 0.1);
+}
+
+.prefix.python {
+  color: #3776ab;
+  background-color: rgba(55, 118, 171, 0.1);
+}
+
+.prefix.napcat {
+  color: #42b983;
+  background-color: rgba(66, 185, 131, 0.1);
+}
+
+.prefix.nonebot {
+  color: #6495ed;
+  background-color: rgba(100, 149, 237, 0.1);
+}
+
+.prefix.install {
+  color: #9370db;
+  background-color: rgba(147, 112, 219, 0.1);
+}
+
+.prefix.system {
+  color: #888;
+  background-color: rgba(136, 136, 136, 0.1);
+}
+
+.content {
+  flex: 1;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.content.error {
+  color: #ff6b6b;
+}
+
+.content.warning {
+  color: #ffb347;
+}
+
+.content.success {
+  color: #00ca4e;
+}
+
+.empty-logs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.terminal-options {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 深色模式下的空日志文本 */
+:deep(html.dark-mode) .el-empty__description p {
+  color: var(--el-text-color-secondary);
+}

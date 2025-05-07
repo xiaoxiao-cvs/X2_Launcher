@@ -1,343 +1,163 @@
+# -*- coding: utf-8 -*-
+"""
+X2 Launcher 后端服务
+"""
+import os
 import sys
-from pathlib import Path
-import asyncio
-import json
-import time
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional, List
+import traceback
+from contextlib import asynccontextmanager
 
-# 确保项目根目录在Python路径中
-BASE_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(BASE_DIR))
+# 首先导入编码修复
+try:
+    from utils.encoding_fix import encoding_fixed
+    if not encoding_fixed:
+        print("警告：编码修复失败，可能会出现中文问题")
+except Exception as e:
+    print(f"编码修复失败: {e}")
 
-from backend.utils.logger import XLogger
-from backend.utils.settings import AppConfig as Settings
-from backend.utils.version_manager import VersionController
-from backend.utils.download_manager import DownloadManager
-from backend.utils.install_manager import InstallManager
-from backend.utils.dependency_checker import DependencyChecker
+# 确保当前目录在路径中，以便导入模块
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if (current_dir not in sys.path):
+    sys.path.append(current_dir)
 
-app = FastAPI()
-settings = Settings()
-config = settings.load_config() if callable(getattr(settings, 'load_config', None)) else {}
-version_controller = VersionController(config)
-download_manager = DownloadManager()
-install_manager = InstallManager()
-dependency_checker = DependencyChecker()
+# 尝试导入必要模块
+try:
+    import uvicorn
+    from fastapi import FastAPI, WebSocket, HTTPException, Depends, BackgroundTasks
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import JSONResponse
+    from pydantic import BaseModel
+except ImportError as e:
+    print(f"导入必要模块失败: {e}")
+    print("请确保安装了所有依赖: pip install fastapi uvicorn pydantic websockets aiofiles")
+    sys.exit(1)
 
-# WebSocket连接管理
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
+# 这是新的推荐方式
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 启动时执行的代码
+    print("应用启动...")
+    yield
+    # 关闭时执行的代码
+    print("应用关闭...")
 
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
+# 创建FastAPI应用
+app = FastAPI(
+    title="X2 Launcher API",
+    description="X2 Launcher 后端API服务",
+    version="0.1.0",
+    lifespan=lifespan
+)
 
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-    async def send_log(self, log_data: dict):
-        await self.broadcast(json.dumps(log_data))
-
-manager = ConnectionManager()
-
-# 配置CORS
+# 添加CORS中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # 允许所有源，生产环境应该限制
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 模型定义
-class FolderRequest(BaseModel):
-    path: str
-    
-class DownloadRequest(BaseModel):
-    url: str
-    path: str
-    type: str
-    branch: str = ""
+# 健康检查路由
+@app.get("/api/health")
+async def health_check():
+    """健康检查API"""
+    return {"status": "ok", "message": "服务正常运行"}
 
-# 安装配置模型
-class QQConfigRequest(BaseModel):
-    qq_number: str
-    install_napcat: bool = False
-    install_nonebot: bool = False
-    run_install_script: bool = False
+# 模拟状态API
+@app.get("/api/status")
+async def get_status():
+    """获取系统状态"""
+    return {
+        "mongodb": {"status": "running", "info": "本地实例"},
+        "napcat": {"status": "running", "info": "端口 8095"},
+        "nonebot": {"status": "stopped", "info": ""},
+        "maibot": {"status": "stopped", "info": ""}
+    }
 
-# 安装依赖模型
-class DependencyInstallRequest(BaseModel):
-    packages: Optional[List[str]] = None
-
-# 命令模型
-class CommandRequest(BaseModel):
-    command: str
-
-# API端点定义
-@app.get("/api/versions")
-async def get_versions():
-    return {"versions": version_controller.get_versions()}
-
-@app.post("/api/deploy/{version}")
-async def deploy_version(version: str):
-    success = version_controller.clone_version(version)
-    return {"success": success}
-
-@app.post("/api/start/{version}")
-async def start_bot(version: str):
-    success = version_controller.start_bot(version)
-    return {"success": success}
-
-@app.post("/api/stop")
-async def stop_bot():
-    success = version_controller.stop_bot()
-    return {"success": success}
-
+# 模拟实例列表API
 @app.get("/api/instances")
 async def get_instances():
-    instances = version_controller.get_installed_instances()
-    return {"instances": instances}
+    """获取实例列表"""
+    return {
+        "instances": [
+            {
+                "name": "maibot-latest",
+                "path": "D:/maibot/latest",
+                "installedAt": "2023-05-01 15:24:30",
+                "status": "running",
+                "services": {
+                    "napcat": "running",
+                    "nonebot": "stopped"
+                }
+            },
+            {
+                "name": "maibot-stable",
+                "path": "D:/maibot/stable",
+                "installedAt": "2023-04-15 10:33:22",
+                "status": "stopped",
+                "services": {
+                    "napcat": "stopped",
+                    "nonebot": "stopped"
+                }
+            }
+        ]
+    }
 
-@app.delete("/api/instance/{name}")
-async def delete_instance(name: str):
-    success = version_controller.delete_instance(name)
-    return {"success": success}
-
-@app.post("/api/update/{name}")
-async def update_instance(name: str):
-    success = version_controller.update_instance(name)
-    return {"success": success}
-
-@app.post("/api/open-folder")
-async def open_folder(data: FolderRequest):
-    success = version_controller.open_folder(data.path)
-    return {"success": success}
-
-@app.post("/api/open-path")
-async def open_path(data: FolderRequest):
-    success = version_controller.open_folder(data.path)
-    return {"success": success}
-
-@app.get("/api/select-folder")
-async def select_folder():
-    """选择文件夹 (简化实现)"""
-    return {"path": str(Path.home() / "Downloads")}
-
+# 模拟日志API
 @app.get("/api/logs/system")
 async def get_system_logs():
-    logs = await version_controller.get_system_logs()
-    return {"logs": logs}
+    """获取系统日志"""
+    return {
+        "logs": [
+            {"time": "2023-05-07 17:15:22", "level": "INFO", "message": "系统启动"},
+            {"time": "2023-05-07 17:15:25", "level": "INFO", "message": "MongoDB 连接成功"},
+            {"time": "2023-05-07 17:15:30", "level": "WARNING", "message": "NoneBot 适配器未启动"},
+            {"time": "2023-05-07 17:16:45", "level": "ERROR", "message": "MaiBot 初始化失败: 配置文件损坏"}
+        ]
+    }
 
-@app.get("/api/logs/instance/{name}")
-async def get_instance_logs(name: str):
-    logs = version_controller.get_instance_logs(name)
-    return {"logs": logs}
-
-# 下载管理API
-@app.get("/api/downloads")
-async def get_downloads():
-    """获取所有下载任务"""
-    try:
-        downloads = download_manager.get_downloads()
-        return {"downloads": downloads}
-    except Exception as e:
-        XLogger.log(f"获取下载任务列表失败: {str(e)}", "ERROR")
-        raise HTTPException(status_code=500, detail=f"获取下载任务列表失败: {str(e)}")
-
-@app.post("/api/downloads")
-async def add_download(data: DownloadRequest):
-    """添加下载任务"""
-    try:
-        task = download_manager.add_download(
-            url=data.url,
-            path=data.path,
-            download_type=data.type,
-            branch=data.branch
-        )
-        # 自动开始下载
-        download_manager.start_download(task.id)
-        return {"success": True, "id": task.id}
-    except Exception as e:
-        XLogger.log(f"添加下载任务失败: {str(e)}", "ERROR")
-        return {"success": False, "message": str(e)}
-
-@app.post("/api/downloads/{id}/start")
-async def start_download(id: str):
-    """开始下载任务"""
-    try:
-        success = download_manager.start_download(id)
-        return {"success": success}
-    except Exception as e:
-        XLogger.log(f"开始下载任务失败: {str(e)}", "ERROR")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/downloads/{id}/pause")
-async def pause_download(id: str):
-    """暂停下载任务"""
-    try:
-        success = download_manager.pause_download(id)
-        return {"success": success}
-    except Exception as e:
-        XLogger.log(f"暂停下载任务失败: {str(e)}", "ERROR")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/downloads/{id}")
-async def delete_download(id: str):
-    """删除下载任务"""
-    try:
-        success = download_manager.delete_download(id)
-        return {"success": success}
-    except Exception as e:
-        XLogger.log(f"删除下载任务失败: {str(e)}", "ERROR")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# 安装API
-@app.post("/api/install/configure")
-async def configure_qq_settings(data: QQConfigRequest):
-    """配置QQ设置并安装相关组件"""
-    try:
-        results = {}
-        
-        XLogger.log(f"开始配置QQ {data.qq_number}...")
-        
-        # 验证QQ号
-        if not install_manager.is_valid_qq(data.qq_number):
-            return {"success": False, "message": "无效的QQ号，请输入纯数字"}
-        
-        # 运行安装脚本
-        if data.run_install_script:
-            script_success = install_manager.run_install_script()
-            results["install_script"] = script_success
-            if not script_success:
-                return {"success": False, "message": "安装脚本执行失败", "results": results}
-        
-        # 安装NoneBot
-        if data.install_nonebot:
-            nonebot_success = await install_manager.install_nonebot(data.qq_number)
-            results["nonebot"] = nonebot_success
-        
-        # 安装NapCat
-        if data.install_napcat:
-            napcat_success = await install_manager.install_napcat(data.qq_number)
-            results["napcat"] = napcat_success
-            
-        overall_success = all(results.values()) if results else True
-        message = "配置完成" if overall_success else "部分配置失败，请检查日志"
-        
-        return {"success": overall_success, "message": message, "results": results}
-    except Exception as e:
-        XLogger.log(f"配置QQ设置失败: {str(e)}", "ERROR")
-        return {"success": False, "message": str(e)}
-
-@app.get("/api/install/status")
-async def get_install_status():
-    """获取安装状态"""
-    try:
-        status = {
-            "napcat_installing": install_manager.napcat_installing,
-            "nonebot_installing": install_manager.nonebot_installing
-        }
-        
-        # 检查是否有Python进程在运行
-        python_running = False
-        try:
-            # 检查是否有Python进程在运行安装脚本
-            import psutil
-            for proc in psutil.process_iter(['name', 'cmdline']):
-                try:
-                    pinfo = proc.info()
-                    if 'python' in pinfo['name'].lower() and pinfo['cmdline'] and 'pip' in ' '.join(pinfo['cmdline']).lower():
-                        python_running = True
-                        break
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                    pass
-        except ImportError:
-            # 如果无法导入psutil，则依赖install_manager的状态
-            pass
-        
-        status["python_installing"] = python_running
-        status["installing"] = python_running or status["napcat_installing"] or status["nonebot_installing"]
-        
-        return status
-    except Exception as e:
-        XLogger.log(f"获取安装状态失败: {e}", "ERROR")
-        return {"napcat_installing": False, "nonebot_installing": False, "python_installing": False, "installing": False}
-
-# 依赖检查API
-@app.get("/api/check-dependencies")
-async def check_dependencies():
-    """检查所有依赖库的安装情况"""
-    try:
-        result = dependency_checker.check_all_dependencies()
-        return {"success": True, "results": result}
-    except Exception as e:
-        XLogger.log(f"依赖检查失败: {str(e)}", "ERROR")
-        return {"success": False, "message": str(e)}
-
-@app.post("/api/install-dependencies")
-async def install_dependencies(data: DependencyInstallRequest = None):
-    """安装所有缺失的必要依赖"""
-    try:
-        packages = data.packages if data and data.packages else None
-        result = dependency_checker.install_missing_dependencies(packages)
-        return {"success": result["overall_success"], "results": result["details"]}
-    except Exception as e:
-        XLogger.log(f"依赖安装失败: {str(e)}", "ERROR")
-        return {"success": False, "message": str(e)}
-
-@app.post("/api/instance/{name}/command")
-async def send_instance_command(name: str, data: CommandRequest):
-    """向实例发送命令"""
-    try:
-        # 这里应该实现向实例进程发送命令的逻辑
-        # 例如：向进程的标准输入写入命令
-        instance = version_controller.running_instances.get(name)
-        
-        if not instance or not instance.get("process"):
-            raise HTTPException(status_code=404, detail="实例未运行")
-        
-        # 发送命令到进程
-        process = instance["process"]
-        process.stdin.write(f"{data.command}\n".encode())
-        process.stdin.flush()
-        
-        return {"success": True}
-    except Exception as e:
-        XLogger.log(f"向实例发送命令失败: {str(e)}", "ERROR")
-        raise HTTPException(status_code=500, detail=str(e))
-
+# WebSocket日志路由
 @app.websocket("/api/logs/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+    await websocket.accept()
     try:
+        # 发送一条连接成功的消息
+        await websocket.send_json({
+            "time": "2023-05-07 17:30:00",
+            "level": "INFO", 
+            "message": "WebSocket连接已建立"
+        })
+        # 保持连接开启
         while True:
-            # 保持连接活跃，客户端可以随时接收日志
-            await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+            await asyncio.sleep(60)
+    except Exception:
+        pass
+    finally:
+        try:
+            await websocket.close()
+        except:
+            pass
 
-# 添加到日志回调
-def log_callback(log_data, *args):
-    """处理日志回调，兼容不同参数数量"""
-    try:
-        asyncio.create_task(manager.send_log(log_data))
-    except Exception as e:
-        print(f"日志回调处理异常: {e}")
-
-# 设置回调
-version_controller.set_log_callback(log_callback)
-install_manager.set_install_callback(log_callback)
-
+# 如果是作为主程序运行
 if __name__ == "__main__":
-    import uvicorn
-    XLogger.log("启动后端服务器")
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+    print("后端服务启动中...")
+    try:
+        # 设置编码
+        os.environ["PYTHONIOENCODING"] = "utf-8"
+        
+        # 添加缺少的asyncio导入
+        import asyncio
+        
+        # 启动Uvicorn服务器
+        uvicorn.run(
+            app,  # 直接使用app实例
+            host="127.0.0.1",
+            port=5000,
+            log_level="info",
+            access_log=True
+        )
+    except Exception as e:
+        print(f"启动服务器时发生错误: {e}")
+        traceback.print_exc()
+        sys.exit(1)

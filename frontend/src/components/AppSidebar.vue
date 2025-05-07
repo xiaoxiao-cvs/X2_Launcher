@@ -1,83 +1,63 @@
 <template>
-  <div class="sidebar">
-    <el-menu 
-      :default-active="activeTab" 
-      @select="handleSelect"
-      class="sidebar-menu">
-      <el-menu-item index="home" class="menu-item">
-        <el-icon><House /></el-icon>
-        <span>首页</span>
-      </el-menu-item>
-      <el-menu-item index="instances" class="menu-item">
-        <el-icon><Menu /></el-icon>
-        <span>实例</span>
-      </el-menu-item>
-      <el-menu-item index="downloads" class="menu-item">
-        <el-icon><Download /></el-icon>
-        <span>下载</span>
-      </el-menu-item>
-      <el-menu-item index="logs" class="menu-item">
-        <el-icon><Notebook /></el-icon>
-        <span>日志</span>
-      </el-menu-item>
-      <el-menu-item index="settings" class="menu-item">
-        <el-icon><Setting /></el-icon>
-        <span>设置</span>
-      </el-menu-item>
-    </el-menu>
+  <div class="side-nav" :class="{ expanded: isExpanded }">
+    <div class="side-nav-content">
+      <!-- 导航栏 Logo -->
+      <div class="nav-logo" @click="$emit('toggle')">
+        <el-icon size="large"><HomeFilled /></el-icon>
+        <span class="nav-text">X² Launcher</span>
+      </div>
+
+      <!-- 导航项 -->
+      <div class="nav-items">
+        <div 
+          v-for="(item, key) in menuItems" 
+          :key="key"
+          class="nav-item"
+          :class="{ active: activeTab === key }"
+          @click="navigateTo(key)"
+        >
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span class="nav-text">{{ item.title }}</span>
+        </div>
+      </div>
+      
+      <!-- 底部设置 -->
+      <div class="nav-bottom" @click="$emit('toggle')">
+        <el-icon>
+          <component :is="isExpanded ? 'ArrowLeftBold' : 'ArrowRightBold'" />
+        </el-icon>
+        <span class="nav-text">{{ isExpanded ? '收起' : '展开' }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
-import { House, Menu, Setting, Download, Notebook } from '@element-plus/icons-vue'
+import { ref, inject, watch, onMounted } from 'vue';
+import { HomeFilled, ArrowLeftBold, ArrowRightBold } from '@element-plus/icons-vue';
 
+// 从App.vue注入数据
+const activeTab = inject('activeTab');
+const emitter = inject('emitter');
+const menuItems = inject('menuItems', {});
+
+// 接收展开状态属性
 const props = defineProps({
-  activeTab: {
-    type: String,
-    required: true
+  isExpanded: {
+    type: Boolean,
+    default: false
   }
-})
+});
 
-const emit = defineEmits(['select'])
+// 定义emit
+const emit = defineEmits(['toggle']);
 
-const handleSelect = (index) => {
-  emit('select', index)
-}
+// 导航方法
+const navigateTo = (tabName) => {
+  emitter.emit('navigate-to-tab', tabName);
+};
 </script>
 
-<style scoped>
-.sidebar {
-  width: 200px;
-  background-color: var(--el-bg-color, white);
-  border-right: 1px solid var(--el-border-color-lighter, #e6e6e6);
-  height: 100%;
-  overflow-y: auto;
-  border-radius: 0 0 0 8px;
-  transition: background-color 0.3s, border-color 0.3s;
-}
-
-/* 菜单项动画 */
-.menu-item {
-  transition: all 0.3s ease;
-  border-radius: 6px;
-  margin: 4px 8px;
-  color: var(--el-text-color-primary);
-}
-.menu-item:hover {
-  background-color: var(--el-color-primary-light-9);
-  transform: translateX(3px);
-}
-.menu-item.is-active {
-  background-color: var(--el-color-primary-light-8);
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-  }
-}
+<style>
+@import '../assets/css/appSidebar.css';
 </style>

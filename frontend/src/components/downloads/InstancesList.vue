@@ -61,10 +61,3 @@ const toggleInstance = (instance) => {
   emit('toggle-instance', instance);
 };
 </script>
-
-<style scoped>
-.el-table {
-  --el-table-border-color: transparent;
-  --el-table-header-bg-color: #f5f7fa;
-}
-</style>
