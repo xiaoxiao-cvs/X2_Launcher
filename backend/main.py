@@ -21,7 +21,7 @@ from backend.utils.dependency_checker import DependencyChecker
 
 app = FastAPI()
 settings = Settings()
-config = Settings.load_config()
+config = settings.load_config() if callable(getattr(settings, 'load_config', None)) else {}
 version_controller = VersionController(config)
 download_manager = DownloadManager()
 install_manager = InstallManager()

@@ -49,6 +49,8 @@ class VersionController:
         self.logger = XLogger
         self._version_cache = {}
         self.venv_cache = {}
+        # 添加缺失的 _config 属性初始化
+        self._config = {}
 
     def set_log_callback(self, callback):
         """设置日志回调函数"""

@@ -24,6 +24,10 @@ class AppConfig:
         # 加载配置文件
         self._load_config()
         
+        # 添加 _config 属性初始化
+        self._config = {}
+        self._initialize_defaults()
+        
     def _initialize_defaults(self):
         """初始化默认配置"""
         self._ensure_assets_dir()

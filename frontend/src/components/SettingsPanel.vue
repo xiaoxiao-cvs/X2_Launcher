@@ -80,7 +80,7 @@
 
       <div class="about-content">
         <p><strong>X² Launcher</strong> - MaiBot 管理器</p>
-        <p>版本: 1.0.0</p>
+        <p>版本: 0.1.1</p>
         <p>
           <el-button type="primary" link @click="checkForUpdates" :loading="checkingUpdates">
             检查更新
