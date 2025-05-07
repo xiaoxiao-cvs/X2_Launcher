@@ -358,5 +358,5 @@ PORT={self.ports['maibot']}
         if venv_python.exists():
             return venv_python
         
-        # 回退到系统Python
+        # 获取Python的路径后，如果没有虚拟环境内的Python，就使用系统变量内的Python_PATH
         return Path(sys.executable)

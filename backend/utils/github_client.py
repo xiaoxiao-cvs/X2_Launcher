@@ -6,11 +6,12 @@ from typing import List, Dict, Any
 from .logger import XLogger  # 修改这里
 from .errors import GitHubAPIError  # 添加这行导入
 
+# Github实例，用来获取Github上的远程仓库
 class GitHubClient:
     def __init__(self, token=None):
         self.token = token
         self.timeout = 30
-        XLogger.log("初始化GitHub客户端")  # 更新logger使用
+        XLogger.log("初始化GitHub客户端") #logger更新函数名，记得更新
 
     def _get_headers(self) -> Dict[str, str]:
         """共享的请求头生成"""
@@ -141,5 +142,5 @@ class GitHubClient:
 
     def _handle_error(self, e: Exception, action: str):
         error_msg = f"GitHub {action}失败: {str(e)}"
-        XLogger.log(error_msg, "ERROR")  # 更新logger使用
-        raise GitHubAPIError(error_msg)  # 修复拼写错误
+        XLogger.log(error_msg, "ERROR")  # 更新logger的调用
+        raise GitHubAPIError(error_msg)  # 煞笔笔误修复

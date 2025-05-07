@@ -119,7 +119,7 @@ onMounted(() => {
     applyDarkMode(prefersDark);
   }
 
-  // 加载其他设置
+  // 加载其他的配置
   const savedAnimations = localStorage.getItem('enableAnimations');
   if (savedAnimations !== null) {
     enableAnimations.value = savedAnimations === 'true';
