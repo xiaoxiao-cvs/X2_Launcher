@@ -61,23 +61,24 @@
   align-items: flex-start;
 }
 
-/* 导航栏Logo样式 */
+/* 导航栏Logo样式 - 修改为不可点击但保留视觉效果 */
 .nav-logo {
   display: flex;
   align-items: center;
   margin-bottom: 30px;
-  cursor: pointer;
   width: 100%;
   padding: 8px 0;
   border-radius: 8px;
   justify-content: center;
   transition: all 0.3s;
+  cursor: default; /* 改为默认光标，表明不可点击 */
 }
 
 .side-nav.expanded .nav-logo {
   justify-content: flex-start;
 }
 
+/* 保留悬停效果视觉效果 */
 .nav-logo:hover {
   background-color: var(--hover-color, rgba(255, 255, 255, 0.1));
 }

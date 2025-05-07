@@ -1,9 +1,9 @@
 <template>
   <div class="side-nav" :class="{ expanded: isExpanded }">
     <div class="side-nav-content">
-      <!-- 导航栏 Logo -->
-      <div class="nav-logo" @click="$emit('toggle')">
-        <el-icon size="large"><HomeFilled /></el-icon>
+      <!-- 导航栏 Logo - 修改为使用自定义图标，保持不可点击状态 -->
+      <div class="nav-logo">
+        <img src="/assets/icon.ico" alt="X² Launcher" class="app-icon" />
         <span class="nav-text">X² Launcher</span>
       </div>
 
@@ -60,4 +60,11 @@ const navigateTo = (tabName) => {
 
 <style>
 @import '../assets/css/appSidebar.css';
+
+/* 添加图标样式 */
+.app-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
 </style>

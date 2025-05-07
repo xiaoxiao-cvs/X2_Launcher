@@ -70,7 +70,7 @@ const logsPanel = ref(null);
 
 // 侧边栏菜单项
 const menuItems = {
-  home: { title: '主页', icon: HomeFilled },
+  home: { title: '仪表盘', icon: HomeFilled },
   instances: { title: '实例管理', icon: List },
   downloads: { title: '下载中心', icon: Download },
   logs: { title: '系统日志', icon: Document },

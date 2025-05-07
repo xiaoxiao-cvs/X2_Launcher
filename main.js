@@ -15,7 +15,9 @@ function createWindow() {
             contextIsolation: true,
             enableRemoteModule: true,
             preload: path.join(__dirname, 'electron/preload.js')
-        }
+        },
+        autoHideMenuBar: true, // 自动隐藏菜单栏
+        menuBarVisible: false // 设置菜单栏不可见
     })
 
     // 启动Python后端服务
@@ -28,6 +30,9 @@ function createWindow() {
     } else {
         mainWindow.loadFile(path.join(__dirname, 'frontend/dist/index.html'))
     }
+
+    // 移除菜单栏
+    mainWindow.setMenu(null);
 }
 
 function startPythonBackend() {

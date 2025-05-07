@@ -1,0 +1,30 @@
+{
+  "name": "x2-launcher",
+  "version": "1.0.0",
+  "description": "X² Launcher",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "build": {
+    "appId": "com.x2launcher.app",
+    "productName": "X² Launcher",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "../frontend/public/assets/icon.ico"
+    },
+    "mac": {
+      "icon": "../frontend/public/assets/icon.ico"
+    },
+    "linux": {
+      "icon": "../frontend/public/assets/icon.ico"
+    }
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^13.1.7"
+  }
+}

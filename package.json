@@ -10,10 +10,10 @@
     "predev": "npm run cleanup && node scripts/create_assets.js"
   },
   "build": {
-    "appId": "com.x2.launcher",
+    "appId": "com.x2launcher.app",
     "productName": "X² Launcher",
     "directories": {
-      "output": "release"
+      "output": "dist"
     },
     "files": [
       "electron/**/*",
@@ -25,7 +25,13 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/app.ico"
+      "icon": "./frontend/public/assets/icon.ico"
+    },
+    "mac": {
+      "icon": "./frontend/public/assets/icon.ico"
+    },
+    "linux": {
+      "icon": "./frontend/public/assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,

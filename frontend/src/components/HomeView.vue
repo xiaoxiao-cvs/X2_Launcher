@@ -4,19 +4,9 @@
     <div class="home-content">
       <div class="header">
         <div class="title-section">
-          <h1 class="main-title">控制面板</h1>
+          <h1 class="main-title">仪表盘</h1>
         </div>
-        <div class="header-right">
-          <el-switch
-            v-model="isDarkMode"
-            size="large"
-            inline-prompt
-            :active-icon="Moon"
-            :inactive-icon="Sunny"
-            @change="toggleDarkMode"
-          />
-          <el-icon class="setting-icon" @click="handleTabChange('settings')"><Setting /></el-icon>
-        </div>
+        <!-- 移除了 header-right 部分，包含主题切换和设置按钮 -->
       </div>
 
       <div class="stats-cards">
@@ -690,17 +680,6 @@ const refreshCharts = () => {
 .title-section .main-title {
   font-size: 28px;
   font-weight: bold;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.setting-icon {
-  font-size: 24px;
-  cursor: pointer;
 }
 
 /* 深色模式适配 */

@@ -140,18 +140,22 @@ function startDiagnostic() {
 
 // 创建主窗口
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1280,
+  // 创建浏览器窗口
+  const mainWindow = new BrowserWindow({
+    width: 1200,
     height: 800,
+    icon: path.join(__dirname, '..', 'frontend', 'public', 'assets', 'icon.ico'), // 添加图标路径
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     },
     title: 'X² Launcher',
-    backgroundColor: '#1a2a42'
+    backgroundColor: '#1a2a42',
+    autoHideMenuBar: true, // 自动隐藏菜单栏
+    menuBarVisible: false, // 设置菜单栏不可见
   });
-  
+
   // 开发模式直接连接Vite服务器
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:3000');
@@ -160,7 +164,10 @@ function createWindow() {
     // 生产模式加载打包后的文件
     mainWindow.loadFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
   }
-  
+
+  // 移除菜单栏
+  mainWindow.setMenu(null);
+
   // 窗口关闭处理
   mainWindow.on('closed', () => {
     mainWindow = null;
