@@ -59,7 +59,7 @@ const initCssVariables = () => {
         newState ? 'calc(100% - 64px)' : 'calc(100% - 220px)'
       )
       
-      // 更新DOM类名
+      // 更新DOM类名并触发resize事件
       const appRoot = document.getElementById('app')
       if (appRoot) {
         if (newState) {
@@ -67,12 +67,15 @@ const initCssVariables = () => {
         } else {
           appRoot.classList.remove('sidebar-collapsed')
         }
+        
+        // 触发窗口resize事件，以便图表等组件可以正确调整尺寸
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'))
+        }, 300)
       }
       
-      // 触发全局事件
-      window.dispatchEvent(new CustomEvent('sidebar-state-changed', { 
-        detail: { collapsed: newState } 
-      }))
+      // 触发自定义事件，通知侧边栏状态变化
+      window.dispatchEvent(new CustomEvent('sidebar-state-changed'))
     }
   }
   
@@ -371,3 +374,24 @@ const checkInitialBackendConnection = async () => {
 
 // 启动应用
 initApp()
+
+// 添加侧边栏状态同步
+window.addEventListener('sidebar-state-changed', () => {
+  const sidebarCollapsed = localStorage.getItem('sidebarExpanded') !== 'true';
+  
+  // 更新CSS变量
+  document.documentElement.style.setProperty(
+    '--sidebar-width', 
+    sidebarCollapsed ? '64px' : '220px'
+  );
+  document.documentElement.style.setProperty(
+    '--content-margin', 
+    sidebarCollapsed ? '79px' : '235px'
+  );
+  document.documentElement.style.setProperty(
+    '--content-width', 
+    sidebarCollapsed ? 'calc(100% - 64px)' : 'calc(100% - 220px)'
+  );
+  
+  console.log('侧边栏状态已同步:', sidebarCollapsed ? '折叠' : '展开');
+});

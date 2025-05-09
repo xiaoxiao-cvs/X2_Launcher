@@ -28,100 +28,92 @@
       从 <a href="https://github.com/MaiM-with-u/MaiBot" target="_blank">MaiBot 仓库</a> 获取版本
     </p>
     
-    <!-- Bot配置选项 -->
-    <div class="bot-config" v-if="selectedVersion">
-      <el-divider content-position="left">Bot 配置</el-divider>
-      
-      <div class="config-options">
-        <div class="option-item">
-          <el-checkbox v-model="installNapcat">
-            <div class="option-title">安装 NapCat</div>
-            <div class="option-desc">安装 NapCat 作为机器人连接器</div>
-          </el-checkbox>
+    <!-- 实例配置选项 - 添加动画效果 -->
+    <transition name="config-fade">
+      <div class="bot-config" v-if="selectedVersion">
+        <el-divider content-position="left">实例配置</el-divider>
+        
+        <!-- 添加实例名称输入框 -->
+        <div class="instance-name-input">
+          <el-form :model="form" label-position="top">
+            <el-form-item label="实例名称" required>
+              <el-input 
+                v-model="instanceName" 
+                placeholder="请输入实例名称"
+                :maxlength="50"
+                show-word-limit>
+              </el-input>
+              <p class="input-tip">该名称将用于区分不同的Bot实例</p>
+            </el-form-item>
+          </el-form>
         </div>
         
-        <div class="option-item">
-          <el-checkbox v-model="installNonebot">
-            <div class="option-title">配置 NoneBot</div>
-            <div class="option-desc">配置 NoneBot 机器人环境</div>
-          </el-checkbox>
-        </div>
-        
-        <div class="option-item">
-          <el-checkbox v-model="runInstallScript">
-            <div class="option-title">运行安装脚本</div>
-            <div class="option-desc">执行Python环境配置和依赖安装</div>
-          </el-checkbox>
-        </div>
-        
-        <!-- 添加新选项：安装适配器 -->
-        <div class="option-item">
-          <el-checkbox v-model="installAdapter">
-            <div class="option-title">安装NB适配器</div>
-            <div class="option-desc">安装MaiBot的NoneBot适配器</div>
-          </el-checkbox>
-        </div>
-      </div>
-      
-      <!-- QQ号输入 -->
-      <div class="qq-input" v-if="installNapcat || installNonebot">
-        <el-input
-          v-model="qqNumber"
-          placeholder="请输入QQ号"
-          :prefix-icon="User"
-          clearable>
-          <template #prepend>QQ号</template>
-        </el-input>
-        <p class="input-tip">用于配置机器人连接的QQ账号</p>
-      </div>
-      
-      <!-- 端口配置 -->
-      <div class="ports-config" v-if="installNapcat || installNonebot">
-        <el-divider content-position="left">端口配置</el-divider>
-        <div class="ports-grid">
-          <div class="port-item">
-            <el-input
-              v-model="noncatPort"
-              type="number"
-              placeholder="Napcat端口">
-              <template #prepend>Napcat端口</template>
-            </el-input>
-            <p class="port-desc">NapCat的WebSocket服务器端口</p>
+        <!-- 调整复选框顺序: 先适配器，后NapCat -->
+        <div class="config-options">
+          <div class="option-item">
+            <el-checkbox v-model="installAdapter">
+              <div class="option-title">安装 NapCat 适配器</div>
+              <div class="option-desc">安装 MaiBot 的 NapCat 适配器</div>
+            </el-checkbox>
           </div>
           
-          <div class="port-item">
-            <el-input
-              v-model="nonebotPort"
-              type="number"
-              placeholder="NoneBot端口">
-              <template #prepend>NoneBot端口</template>
-            </el-input>
-            <p class="port-desc">NoneBot适配器监听端口</p>
+          <div class="option-item">
+            <el-checkbox v-model="installNapcat">
+              <div class="option-title">安装 NapCat</div>
+              <div class="option-desc">安装 NapCat 作为机器人连接器</div>
+            </el-checkbox>
           </div>
-          
-          <div class="port-item">
-            <el-input
-              v-model="maibotPort"
-              type="number"
-              placeholder="MaiBot端口">
-              <template #prepend>MaiBot端口</template>
-            </el-input>
-            <p class="port-desc">MaiBot主程序监听端口</p>
+        </div>
+        
+        <!-- QQ号输入 -->
+        <div class="qq-input" v-if="installNapcat || installAdapter">
+          <el-input
+            v-model="qqNumber"
+            placeholder="请输入QQ号"
+            :prefix-icon="User"
+            clearable>
+            <template #prepend>QQ号</template>
+          </el-input>
+          <p class="input-tip">用于配置机器人连接的QQ账号</p>
+        </div>
+        
+        <!-- 端口配置：调整为MaiBot、适配器、NapCat的顺序 -->
+        <div class="ports-config" v-if="installNapcat || installAdapter">
+          <el-divider content-position="left">端口配置</el-divider>
+          <div class="ports-grid">
+            <div class="port-item">
+              <el-input
+                v-model="maibotPort"
+                type="number"
+                placeholder="MaiBot端口">
+                <template #prepend>MaiBot端口</template>
+              </el-input>
+              <p class="port-desc">MaiBot主程序监听端口</p>
+            </div>
+
+            <div class="port-item">
+              <el-input
+                v-model="adapterPort"
+                type="number"
+                placeholder="适配器端口">
+                <template #prepend>适配器端口</template>
+              </el-input>
+              <p class="port-desc">NapCat适配器监听端口</p>
+            </div>
+            
+            <div class="port-item">
+              <el-input
+                v-model="napcatPort"
+                type="number"
+                placeholder="NapCat端口">
+                <template #prepend>NapCat端口</template>
+              </el-input>
+              <p class="port-desc">NapCat的WebSocket服务器端口</p>
+            </div>
           </div>
         </div>
       </div>
-      
-      <!-- 安装提示 -->
-      <div class="install-tips" v-if="selectedVersion">
-        <el-alert
-          title="安装提示"
-          type="info"
-          description="安装完成后，请在实例管理中按照正确顺序启动各组件：1.NapCat 2.NoneBot 3.MaiBot"
-          :closable="false"
-          show-icon>
-        </el-alert>
-      </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -157,22 +149,35 @@ const installLoading = ref(false);
 const versionError = ref('');
 const installStatus = ref('idle');  // idle, installing, completed, failed
 
+// 添加表单对象用于输入验证
+const form = ref({});
+
+// 添加实例名称
+const instanceName = ref('');
+
 // Bot配置选项
 const installNapcat = ref(true);
-const installNonebot = ref(true);
-const runInstallScript = ref(true);  // 默认勾选运行安装脚本
-const installAdapter = ref(true);    // 默认勾选安装适配器
+const installAdapter = ref(true);
 const qqNumber = ref('');
 
-// 端口配置
-const noncatPort = ref('8095');     // NapCat默认端口
-const nonebotPort = ref('18002');   // NoneBot默认端口
+// 端口配置 - 添加适配器端口
+const napcatPort = ref('8095');     // NapCat默认端口
+const adapterPort = ref('18002');   // 适配器默认端口
 const maibotPort = ref('8000');     // MaiBot默认端口
 
 // 是否可以安装Bot
 const canConfigureBot = computed(() => {
-  if (!installNapcat.value && !installNonebot.value) return true;
-  return qqNumber.value.trim() !== '' && /^\d+$/.test(qqNumber.value);
+  // 首先检查实例名称
+  if (!instanceName.value || instanceName.value.trim() === '') {
+    return false;
+  }
+  
+  // 如果启用了适配器或NapCat，检查QQ号
+  if (installNapcat.value || installAdapter.value) {
+    return qqNumber.value.trim() !== '' && /^\d+$/.test(qqNumber.value);
+  }
+  
+  return true;
 });
 
 // 版本安装方法
@@ -230,8 +235,14 @@ const installVersion = async () => {
     return;
   }
   
+  // 检查实例名称
+  if (!instanceName.value || instanceName.value.trim() === '') {
+    ElMessage.error('请输入实例名称');
+    return;
+  }
+  
   // 检查Bot配置
-  if ((installNapcat.value || installNonebot.value) && !canConfigureBot.value) {
+  if ((installNapcat.value || installAdapter.value) && !canConfigureBot.value) {
     ElMessage.warning('请输入有效的QQ号');
     return;
   }
@@ -250,11 +261,12 @@ const installVersion = async () => {
       time: formatTime(new Date()),
       source: 'command',
       level: 'INFO',
-      message: `$ 开始安装 ${selectedVersion.value}...`
+      message: `$ 开始安装 ${selectedVersion.value}，实例名称：${instanceName.value}...`
     });
     
-    // 1. 首先使用新API安装MaiBot实例
-    const deployResult = await deployApi.deployVersion(selectedVersion.value);
+    // 1. 首先使用API安装MaiBot实例，传递实例名称
+    // 修改：显式使用更可靠的端点
+    const deployResult = await deployApi.deployVersion(selectedVersion.value, instanceName.value);
     
     if (!deployResult.success) {
       ElMessage.error(deployResult.message || '安装失败');
@@ -273,11 +285,11 @@ const installVersion = async () => {
       time: formatTime(new Date()),
       source: 'command',
       level: 'SUCCESS',
-      message: `$ ${selectedVersion.value} 基础安装完成`
+      message: `$ ${instanceName.value} (${selectedVersion.value}) 基础安装完成`
     });
     
-    // 2. 然后配置NapCat和NoneBot (如果启用)
-    if (installNapcat.value || installNonebot.value || runInstallScript.value || installAdapter.value) {
+    // 2. 然后配置NapCat和适配器 (如果启用)
+    if (installNapcat.value || installAdapter.value) {
       // 添加命令行指示符
       addLog({
         time: formatTime(new Date()),
@@ -287,52 +299,35 @@ const installVersion = async () => {
       });
       
       // 如果启用了各组件，显示对应的安装指示
-      if (installNapcat.value) {
-        addLog({
-          time: formatTime(new Date()),
-          source: 'command',
-          level: 'INFO',
-          message: `$ 配置 NapCat (QQ: ${qqNumber.value || '未指定'}, 端口: ${noncatPort.value})...`
-        });
-      }
-      
-      if (installNonebot.value) {
-        addLog({
-          time: formatTime(new Date()),
-          source: 'command',
-          level: 'INFO',
-          message: `$ 配置 NoneBot (端口: ${nonebotPort.value})...`
-        });
-      }
-      
       if (installAdapter.value) {
         addLog({
           time: formatTime(new Date()),
           source: 'command',
           level: 'INFO', 
-          message: `$ 安装 NoneBot 适配器...`
+          message: `$ 安装 NapCat 适配器...`
         });
       }
       
-      if (runInstallScript.value) {
+      if (installNapcat.value) {
         addLog({
           time: formatTime(new Date()),
           source: 'command',
           level: 'INFO',
-          message: `$ 准备执行 Python 依赖安装...`
+          message: `$ 配置 NapCat (QQ: ${qqNumber.value || '未指定'}, 端口: ${napcatPort.value})...`
         });
       }
       
-      // 开始进行配置并安装 - 使用新API
+      // 开始进行配置并安装 - 使用新API，传递实例名称和适配器端口
       const configResponse = await deployApi.configureBot({
+        instance_name: instanceName.value,
         qq_number: qqNumber.value,
         install_napcat: installNapcat.value,
-        install_nonebot: installNonebot.value,
-        run_install_script: runInstallScript.value,
+        install_nonebot: false, // 已移除，设为false
+        run_install_script: true, // 保持为true，后端需要
         install_adapter: installAdapter.value,
         ports: {
-          napcat: parseInt(noncatPort.value),
-          nonebot: parseInt(nonebotPort.value),
+          napcat: parseInt(napcatPort.value),
+          adapter: parseInt(adapterPort.value),
           maibot: parseInt(maibotPort.value)
         }
       });
@@ -389,9 +384,9 @@ const installVersion = async () => {
 const isPortValid = () => {
   // 检查端口是否在有效范围内
   const ports = [
-    { name: 'NapCat', value: noncatPort.value },
-    { name: 'NoneBot', value: nonebotPort.value },
-    { name: 'MaiBot', value: maibotPort.value }
+    { name: 'MaiBot', value: maibotPort.value },
+    { name: 'NapCat适配器', value: adapterPort.value },
+    { name: 'NapCat', value: napcatPort.value }
   ];
   
   for (const port of ports) {
@@ -504,15 +499,18 @@ onUnmounted(() => {
 });
 
 // 监听版本变化，重置配置
-watch(selectedVersion, () => {
-  if (selectedVersion.value) {
-    installNapcat.value = true;
-    installNonebot.value = true;
-    runInstallScript.value = true;
+watch(selectedVersion, (newVal) => {
+  if (newVal) {
+    // 如果选择了版本，提供默认实例名称
+    if (!instanceName.value) {
+      instanceName.value = `MaiBot-${newVal}`;
+    }
+    
     installAdapter.value = true;
+    installNapcat.value = true;
     qqNumber.value = '';
-    noncatPort.value = '8095';
-    nonebotPort.value = '18002';
+    napcatPort.value = '8095';
+    adapterPort.value = '18002';
     maibotPort.value = '8000';
   }
 });
@@ -542,4 +540,57 @@ defineExpose({
 
 <style>
 @import '../../assets/css/downloads/installConfig.css';
+
+/* 添加动画效果 */
+.config-fade-enter-active,
+.config-fade-leave-active {
+  transition: all 0.5s ease;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.config-fade-enter-from,
+.config-fade-leave-to {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* 实例名称输入样式 */
+.instance-name-input {
+  margin-bottom: 20px;
+}
+
+/* 修复边距问题 */
+.el-form-item {
+  margin-bottom: 15px;
+}
+
+.el-form-item__label {
+  padding-bottom: 6px;
+  font-weight: 500;
+}
+
+/* 确保表单布局正确 */
+.el-form {
+  width: 100%;
+}
+
+/* 修复端口配置布局 */
+.ports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .ports-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

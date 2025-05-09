@@ -134,14 +134,14 @@ default = "{prompt}"
     def configure_adapter(self, 
                          qq_number: str, 
                          napcat_port: int = 8095, 
-                         nonebot_port: int = 18002, 
+                         adapter_port: int = 18002, 
                          maibot_port: int = 8000) -> bool:
         """配置MaiBot-Napcat-Adapter
         
         Args:
             qq_number: 机器人QQ号
             napcat_port: NapCat监听端口
-            nonebot_port: NoneBot监听端口
+            adapter_port: 适配器监听端口
             maibot_port: MaiBot监听端口
             
         Returns:
@@ -174,18 +174,19 @@ default = "{prompt}"
                     "bot_name": self.instance_name
                 }
                 
+                # 添加适配器端口配置
+                adapter_config["Adapter"] = {
+                    "port": adapter_port
+                }
+                
                 # 如果存在NoneBot配置
                 if "NoneBot" in adapter_config:
-                    adapter_config["NoneBot"]["port"] = nonebot_port
-                else:
-                    adapter_config["NoneBot"] = {
-                        "port": nonebot_port
-                    }
+                    adapter_config["NoneBot"]["port"] = adapter_port
                 
                 with open(adapter_config_path, "wb") as f:
                     toml_writer.dump(adapter_config, f)
                 
-                logger.info(f"已配置Adapter，设置QQ号为{qq_number}，NapCat端口为{napcat_port}，NoneBot端口为{nonebot_port}")
+                logger.info(f"已配置Adapter，设置QQ号为{qq_number}，NapCat端口为{napcat_port}，适配器端口为{adapter_port}")
             else:
                 # 如果模板不存在，创建一个基本配置
                 adapter_config = {
@@ -203,15 +204,15 @@ default = "{prompt}"
                         "QQ": qq_number,
                         "bot_name": self.instance_name
                     },
-                    "NoneBot": {
-                        "port": nonebot_port
+                    "Adapter": {
+                        "port": adapter_port
                     }
                 }
                 
                 with open(adapter_config_path, "wb") as f:
                     toml_writer.dump(adapter_config, f)
                 
-                logger.info(f"已创建Adapter配置，设置QQ号为{qq_number}，NapCat端口为{napcat_port}，NoneBot端口为{nonebot_port}")
+                logger.info(f"已创建Adapter配置，设置QQ号为{qq_number}，NapCat端口为{napcat_port}，适配器端口为{adapter_port}")
             
             return True
         except Exception as e:
@@ -311,7 +312,7 @@ pause
         """
         qq_number = config.get("qq_number", "")
         napcat_port = config.get("napcat_port", 8095)
-        nonebot_port = config.get("nonebot_port", 18002)
+        adapter_port = config.get("adapter_port", 18002)  # 使用适配器端口而不是nonebot_port
         maibot_port = config.get("maibot_port", 8000)
         model_type = config.get("model_type", "chatglm")
         
@@ -332,7 +333,7 @@ pause
         adapter_configured = self.configure_adapter(
             qq_number=qq_number,
             napcat_port=napcat_port,
-            nonebot_port=nonebot_port,
+            adapter_port=adapter_port,  # 传递适配器端口
             maibot_port=maibot_port
         )
         if not adapter_configured:
@@ -362,7 +363,7 @@ pause
             "config": {
                 "qq_number": qq_number,
                 "napcat_port": napcat_port,
-                "nonebot_port": nonebot_port,
+                "adapter_port": adapter_port,
                 "maibot_port": maibot_port,
                 "model_type": model_type
             },
@@ -382,7 +383,7 @@ if __name__ == "__main__":
     parser.add_argument("--instance", default="default", help="实例名称")
     parser.add_argument("--qq", default="", help="QQ号")
     parser.add_argument("--napcat-port", type=int, default=8095, help="NapCat端口")
-    parser.add_argument("--nonebot-port", type=int, default=18002, help="NoneBot端口")
+    parser.add_argument("--adapter-port", type=int, default=18002, help="适配器端口")
     parser.add_argument("--maibot-port", type=int, default=8000, help="MaiBot端口")
     args = parser.parse_args()
     
@@ -390,7 +391,7 @@ if __name__ == "__main__":
     result = configurator.configure({
         "qq_number": args.qq,
         "napcat_port": args.napcat_port,
-        "nonebot_port": args.nonebot_port,
+        "adapter_port": args.adapter_port,
         "maibot_port": args.maibot_port
     })
     print(json.dumps(result, indent=2))

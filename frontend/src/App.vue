@@ -1,7 +1,10 @@
 <template>
-  <div class="app-container" :class="{ 'dark-mode': darkMode }">
+  <div class="app-container" :class="{ 'dark-mode': darkMode, 'sidebar-expanded': sidebarExpanded, 'sidebar-collapsed': !sidebarExpanded }">
     <!-- 侧边栏 -->
-    <AppSidebar :is-expanded="sidebarExpanded" @toggle="toggleSidebar" />
+    <AppSidebar 
+      :is-expanded="sidebarExpanded" 
+      @toggle="toggleSidebar" 
+    />
     
     <!-- 主内容区域 -->
     <div class="content-area" :class="{ 'sidebar-expanded': sidebarExpanded }">
@@ -117,6 +120,17 @@ const currentComponent = computed(() => {
   }
 });
 
+// 提供处理安装事件 - 添加实例名称验证
+provide('handleInstall', (installConfig) => {
+  if (!installConfig.instanceName || installConfig.instanceName.trim() === '') {
+    ElMessage.error('安装失败: 缺少实例名称');
+    return false;
+  }
+  // 处理安装逻辑
+  console.log('开始安装实例:', installConfig);
+  return true;
+});
+
 // 监听深色模式变化
 const updateDarkMode = (isDark) => {
   darkMode.value = isDark;
@@ -145,18 +159,65 @@ const initDarkMode = () => {
   updateDarkMode(darkMode.value);
 };
 
-// 切换侧边栏状态
+// 切换侧边栏状态 - 增加日志和调试信息
 const toggleSidebar = () => {
-  sidebarExpanded.value = !sidebarExpanded.value;
-  localStorage.setItem('sidebarExpanded', sidebarExpanded.value);
+  console.log('侧边栏切换被触发，当前状态:', sidebarExpanded.value);
   
-  // 添加延迟以确保状态更新后再触发窗口调整
-  setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+  // 切换状态
+  sidebarExpanded.value = !sidebarExpanded.value;
+  
+  // 保存状态到本地存储
+  localStorage.setItem('sidebarExpanded', sidebarExpanded.value.toString());
+  
+  // 更新CSS变量以确保内容区域正确偏移
+  const sidebarWidth = sidebarExpanded.value ? '220px' : '64px';
+  document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
+  document.documentElement.style.setProperty(
+    '--content-margin', 
+    sidebarExpanded.value ? '235px' : '79px'
+  );
+  document.documentElement.style.setProperty(
+    '--content-width', 
+    sidebarExpanded.value ? 'calc(100% - 220px)' : 'calc(100% - 64px)'
+  );
+
+  // 添加类以控制整体布局
+  const appElement = document.querySelector('.app-container');
+  if (appElement) {
+    if (sidebarExpanded.value) {
+      appElement.classList.add('sidebar-expanded');
+      appElement.classList.remove('sidebar-collapsed');
+    } else {
+      appElement.classList.add('sidebar-collapsed');
+      appElement.classList.remove('sidebar-expanded');
+    }
+  }
+  
+  // 触发自定义事件，通知侧边栏状态变化
+  window.dispatchEvent(new CustomEvent('sidebar-state-changed'));
+  
+  // 确保DOM更新后再触发resize事件
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+    console.log('侧边栏切换完成，新状态:', sidebarExpanded.value);
+  }, 300);
 };
 
-// 监听侧边栏展开状态变化
+// 监听侧边栏展开状态变化 - 确保正确应用CSS变量
 const checkSidebarState = () => {
   sidebarExpanded.value = localStorage.getItem('sidebarExpanded') === 'true';
+  
+  // 根据侧边栏状态更新CSS变量
+  const sidebarWidth = sidebarExpanded.value ? '220px' : '64px';
+  document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
+  document.documentElement.style.setProperty(
+    '--content-margin', 
+    sidebarExpanded.value ? '235px' : '79px'
+  );
+  document.documentElement.style.setProperty(
+    '--content-width', 
+    sidebarExpanded.value ? 'calc(100% - 220px)' : 'calc(100% - 64px)'
+  );
 };
 
 // 监听日志查看事件和页面导航
@@ -261,10 +322,15 @@ const initThemeColor = () => {
       // 图表颜色绑定到主题色
       document.documentElement.style.setProperty('--chart-line', themeColors[savedTheme]);
       document.documentElement.style.setProperty('--chart-secondary', lightenColor);
+      
+      // 更新侧边栏颜色变量 - 基于当前主题色
+      updateSidebarColorVariable(themeColors[savedTheme], darkMode.value);
     }
   } else {
     // 设置默认主题色到全局变量
     window.currentThemeColor = '#4a7eff';
+    // 更新侧边栏颜色变量 - 使用默认主题
+    updateSidebarColorVariable('#4a7eff', darkMode.value);
   }
 };
 
@@ -276,17 +342,43 @@ const adjustColorBrightness = (hex, percent) => {
   let b = parseInt(hex.substring(5, 7), 16);
 
   // 调整亮度
-  r = Math.min(255, Math.max(0, r + (r * percent / 100)));
-  g = Math.min(255, Math.max(0, g + (g * percent / 100)));
-  b = Math.min(255, Math.max(0, b + (b * percent / 100)));
-
-  // 转回十六进制
-  const rHex = Math.round(r).toString(16).padStart(2, '0');
-  const gHex = Math.round(g).toString(16).padStart(2, '0');
-  const bHex = Math.round(b).toString(16).padStart(2, '0');
+  r = Math.min(255, Math.max(0, Math.round(r + (r * percent / 100))));
+  g = Math.min(255, Math.max(0, Math.round(g + (g * percent / 100))));
+  b = Math.min(255, Math.max(0, Math.round(b + (b * percent / 100))));
   
-  return `#${rHex}${gHex}${bHex}`;
+  // 转换回十六进制格式
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 };
+
+// 添加侧边栏颜色更新函数
+const updateSidebarColorVariable = (themeColor, isDarkMode) => {
+  // 根据主题色生成配套的侧边栏颜色
+  const baseColor = isDarkMode 
+    ? adjustColorBrightness(themeColor, -40) // 深色模式下变暗
+    : adjustColorBrightness(themeColor, 90);  // 浅色模式下变亮
+  
+  // 转换为rgba格式
+  const hexToRgba = (hex, opacity) => {
+    let r = parseInt(hex.substring(1, 3), 16);
+    let g = parseInt(hex.substring(3, 5), 16);
+    let b = parseInt(hex.substring(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+  
+  // 生成侧边栏背景色
+  const sidebarBg = hexToRgba(baseColor, 0.65);
+  
+  // 更新CSS变量
+  document.documentElement.style.setProperty('--sidebar-bg', sidebarBg);
+};
+
+// 监听深色模式变化
+watch(darkMode, (newValue) => {
+  // 当深色模式变化时，更新侧边栏颜色
+  if (window.currentThemeColor) {
+    updateSidebarColorVariable(window.currentThemeColor, newValue);
+  }
+});
 
 // 组件卸载时清理
 onBeforeUnmount(() => {

@@ -28,6 +28,25 @@
 /* Bot配置样式 */
 .bot-config {
   margin-top: 20px;
+  transition: all 0.3s ease;
+  padding: 5px;
+}
+
+/* 实例名称输入样式 */
+.instance-name-input {
+  margin-bottom: 20px;
+  animation: fadeSlideDown 0.5s ease-in-out;
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .config-options {
@@ -50,6 +69,36 @@
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
+/* 深色模式下的样式适配 */
+.dark-mode .option-item {
+  background: var(--card-bg-color);
+  border-color: var(--border-light);
+}
+
+/* 填加动画 */
+.config-fade-enter-active,
+.config-fade-leave-active {
+  transition: all 0.5s ease;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.config-fade-enter-from,
+.config-fade-leave-to {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.instance-name-input {
+  margin-bottom: 20px;
+}
+
 .option-title {
   font-weight: bold;
   margin-bottom: 4px;
@@ -68,6 +117,7 @@
   font-size: 12px;
   color: #909399;
   margin-top: 4px;
+  margin-bottom: 0;
 }
 
 .ports-config {
@@ -76,7 +126,7 @@
 
 .ports-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -100,4 +150,15 @@
     flex-direction: column;
     align-items: stretch;
   }
+  
+  .ports-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 深色模式样式 */
+.dark-mode .option-desc,
+.dark-mode .input-tip,
+.dark-mode .port-desc {
+  color: rgba(255, 255, 255, 0.6);
 }

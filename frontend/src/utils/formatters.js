@@ -75,20 +75,58 @@ export const formatDateForFile = (date) => {
  * @returns {string} 调整后的颜色值
  */
 export const adjustColorBrightness = (hex, percent) => {
-  // 将十六进制颜色转换为RGB
-  let r = parseInt(hex.substring(1, 3), 16);
-  let g = parseInt(hex.substring(3, 5), 16);
-  let b = parseInt(hex.substring(5, 7), 16);
-
-  // 调整亮度
-  r = Math.min(255, Math.max(0, r + (r * percent / 100)));
-  g = Math.min(255, Math.max(0, g + (g * percent / 100)));
-  b = Math.min(255, Math.max(0, b + (b * percent / 100)));
-
-  // 转回十六进制
-  const rHex = Math.round(r).toString(16).padStart(2, '0');
-  const gHex = Math.round(g).toString(16).padStart(2, '0');
-  const bHex = Math.round(b).toString(16).padStart(2, '0');
+  // 确保hex是有效的十六进制颜色
+  if (!hex || typeof hex !== 'string') {
+    return '#000000';
+  }
   
-  return `#${rHex}${gHex}${bHex}`;
+  // 去除#前缀
+  hex = hex.replace('#', '');
+  
+  // 处理简写形式
+  if (hex.length === 3) {
+    hex = hex.split('').map(c => c + c).join('');
+  }
+  
+  // 解析RGB值
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+  
+  // 调整亮度
+  r = Math.min(255, Math.max(0, Math.round(r + (r * percent / 100))));
+  g = Math.min(255, Math.max(0, Math.round(g + (g * percent / 100))));
+  b = Math.min(255, Math.max(0, Math.round(b + (b * percent / 100))));
+  
+  // 转换回十六进制
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+// 添加RGBA颜色转换函数，更方便处理透明度
+export const hexToRgba = (hex, alpha = 1) => {
+  // 移除可能存在的 # 号
+  hex = hex.replace('#', '');
+  
+  // 如果是3位颜色码，扩展到6位
+  if (hex.length === 3) {
+    hex = hex.split('').map(h => h + h).join('');
+  }
+  
+  // 解析RGB值
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  // 返回rgba格式
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// 根据主题色生成配套的半透明侧边栏颜色
+export const generateSidebarColor = (themeColor, isDarkMode, opacity = 0.65) => {
+  // 从主题色计算出适合作为背景的颜色 - 为浅色模式产生更浅的颜色
+  const baseColor = isDarkMode 
+    ? adjustColorBrightness(themeColor, -40) // 在深色模式下变暗
+    : adjustColorBrightness(themeColor, 90);  // 在浅色模式下变亮
+  
+  return hexToRgba(baseColor, opacity);
 };

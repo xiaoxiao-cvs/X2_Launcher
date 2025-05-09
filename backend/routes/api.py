@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 logger = logging.getLogger("x2-launcher.api")
 
-router = APIRouter(tags=["api"])
+router = APIRouter(tags=["api"], prefix="")  # 移除默认前缀，确保路径正确
 
 # 健康检查API
 @router.get("/health")
@@ -27,6 +27,30 @@ async def health_check():
         "timestamp": time.time(),
         "version": "0.2.0",
         "environment": platform.platform()
+    }
+
+# 添加诊断API，用于检查路由注册情况
+@router.get("/diagnose")
+async def diagnose_api(request: Request):
+    """诊断API，返回所有注册的路由信息"""
+    routes = []
+    
+    # 获取所有路由
+    for route in request.app.routes:
+        route_info = {
+            "path": route.path if hasattr(route, 'path') else str(route),
+            "name": route.name if hasattr(route, 'name') else None,
+            "methods": list(route.methods) if hasattr(route, 'methods') else None,
+        }
+        routes.append(route_info)
+    
+    # 返回应用状态信息
+    return {
+        "routes_count": len(routes),
+        "routes": routes,
+        "environment": platform.platform(),
+        "python_version": platform.python_version(),
+        "timestamp": time.time()
     }
 
 # 状态API
@@ -136,12 +160,25 @@ async def get_system_logs():
         logger.error(f"获取系统日志失败: {e}", exc_info=True)
         return {"logs": [], "error": str(e)}
 
-# 实例统计API
+# 实例统计API - 旧版路径（保持兼容）
 @router.get("/instance-stats")
-async def get_instance_stats(request: Request):
-    """获取实例统计数据"""
+async def get_instance_stats_old(request: Request):
+    """获取实例统计数据（旧API，保留兼容性）"""
     try:
-        # 使用实例管理器
+        logger.info("通过旧API路径请求实例统计数据")
+        instance_manager = request.app.state.instance_manager
+        stats = await instance_manager.get_instance_stats()
+        return stats
+    except Exception as e:
+        logger.error(f"获取实例统计数据失败: {e}", exc_info=True)
+        return {"total": 0, "running": 0, "error": str(e)}
+
+# 实例统计API - 新版路径
+@router.get("/instances/stats")
+async def get_instances_stats(request: Request):
+    """获取实例统计数据 - 新版API"""
+    try:
+        logger.info("通过新API路径请求实例统计数据")
         instance_manager = request.app.state.instance_manager
         stats = await instance_manager.get_instance_stats()
         return stats

@@ -155,12 +155,20 @@ html[data-density="compact"] .settings-card {
 }
 
 /* 深色模式样式覆盖 */
-:deep(.dark-mode) .settings-card {
+html.dark-mode .settings-card {
   background-color: var(--el-bg-color);
   color: var(--el-text-color-primary);
   border-color: var(--el-border-color-darker, #1c1c1c);
 }
 
-:deep(.dark-mode) .card-header {
+html.dark-mode .card-header {
+  color: var(--el-text-color-primary);
+}
+
+html.dark-mode .setting-label {
+  color: var(--el-text-color-primary);
+}
+
+html.dark-mode .about-content {
   color: var(--el-text-color-primary);
 }

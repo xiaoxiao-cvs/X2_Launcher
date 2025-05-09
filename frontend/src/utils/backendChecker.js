@@ -5,17 +5,16 @@
 
 import { ElMessage } from 'element-plus';
 
-// 连接检查配置
-const CHECK_INTERVAL = 5000; // 检查间隔: 5秒
-const MAX_RETRIES = 12; // 最大重试次数: 12次 (约1分钟)
-const TIMEOUT = 2000; // 请求超时: 2秒
+// 全局变量定义
+const TIMEOUT = 5000; // 5秒超时
+const CHECK_INTERVAL = 5000; // 5秒重试间隔
+const MAX_RETRIES = 12; // 最多重试12次
 
-// 全局状态
 let isChecking = false;
+let wasEverConnected = false;
+let onConnectedCallback = null;
 let retryCount = 0;
 let checkTimer = null;
-let onConnectedCallback = null;
-let wasEverConnected = false;
 
 /**
  * 检查后端连接
@@ -24,10 +23,6 @@ let wasEverConnected = false;
  * @returns {Promise<boolean>} 连接状态
  */
 export const checkBackendConnection = async (onConnected = null, showNotifications = true) => {
-  // 存储回调函数
-  if (onConnected) {
-    onConnectedCallback = onConnected;
-  }
   
   // 正在检查中，不重复发起请求
   if (isChecking) return false;
@@ -39,7 +34,10 @@ export const checkBackendConnection = async (onConnected = null, showNotificatio
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
     
-    const response = await fetch('/api/status', {
+    console.log('尝试检查后端连接...');
+    
+    // 使用简单的健康检查API
+    const response = await fetch('/api/health', {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
       signal: controller.signal
@@ -47,22 +45,29 @@ export const checkBackendConnection = async (onConnected = null, showNotificatio
     
     clearTimeout(timeoutId);
     
+    console.log('后端健康检查响应:', response.status);
+    
     if (response.ok) {
+      const data = await response.json();
+      console.log('健康检查数据:', data);
+      
       connected = true;
       window._useMockData = false;
       window.localStorage.setItem('useMockData', 'false');
       
       // 现在连接成功，但之前断开过，显示重新连接消息
       if (wasEverConnected && showNotifications) {
-        ElMessage.success({
-          message: '已重新连接至后端服务',
-          duration: 3000
-        });
+        if (window.ElMessage) {  // 确保ElMessage已加载
+          window.ElMessage.success({
+            message: '已重新连接至后端服务',
+            duration: 3000
+          });
+        }
       }
       
       // 执行连接成功回调
-      if (onConnectedCallback) {
-        onConnectedCallback();
+      if (onConnected) {
+        onConnected();
       }
       
       // 重置重试计数
@@ -70,10 +75,21 @@ export const checkBackendConnection = async (onConnected = null, showNotificatio
       wasEverConnected = true;
     } else {
       connected = false;
+      console.error('健康检查失败，状态码:', response.status);
+      
+      // 尝试读取错误信息
+      try {
+        const errorData = await response.json();
+        console.error('错误详情:', errorData);
+      } catch (parseError) {
+        console.error('无法解析错误响应');
+      }
+      
       enableMockMode('后端服务返回错误状态码: ' + response.status);
     }
   } catch (error) {
     connected = false;
+    console.error('健康检查请求失败:', error);
     enableMockMode(error.name === 'AbortError' ? '连接超时' : error.message);
   } finally {
     isChecking = false;
@@ -92,10 +108,9 @@ const enableMockMode = (reason) => {
   
   window._useMockData = true;
   window.localStorage.setItem('useMockData', 'true');
-  console.warn(`已切换到模拟数据模式：${reason}`);
   
-  // 记录连接状态以便后续检测重连
-  wasEverConnected = wasEverConnected || false;
+  // 添加日志以便调试
+  console.warn(`已启用模拟数据模式: ${reason}`);
 };
 
 /**
@@ -164,8 +179,37 @@ export const stopConnectionRetry = () => {
   retryCount = 0;
 };
 
+/**
+ * 一次性检查API端点可用性
+ * @param {string} endpoint - 要检查的API端点
+ * @returns {Promise<boolean>} 端点是否可用
+ */
+export const checkApiEndpoint = async (endpoint) => {
+  try {
+    console.log(`检查API端点: ${endpoint}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+    
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    const available = response.ok;
+    console.log(`API端点 ${endpoint} 可用性: ${available ? '可用' : '不可用'}`);
+    return available;
+  } catch (error) {
+    console.error(`API端点 ${endpoint} 检查失败:`, error);
+    return false;
+  }
+};
+
 export default {
   checkBackendConnection,
   startConnectionRetry,
-  stopConnectionRetry
+  stopConnectionRetry,
+  checkApiEndpoint
 };

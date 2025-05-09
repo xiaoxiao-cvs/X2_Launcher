@@ -380,34 +380,4 @@ onBeforeUnmount(() => {
 
 <style>
 @import '../assets/css/performanceMonitor.css';
-
-/* 添加响应式样式以适应侧边栏展开 */
-.status-card {
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
-}
-
-/* 调整指标标题和值的对齐方式 */
-.metric-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.metric-value {
-  margin-left: auto; /* 确保值靠右对齐 */
-  font-weight: bold;
-}
-
-/* 确保内容在小屏幕上也能正确显示 */
-@media (max-width: 768px) {
-  .metric-item {
-    padding: 10px;
-  }
-  
-  .metric-header {
-    flex-wrap: wrap;
-  }
-}
 </style>

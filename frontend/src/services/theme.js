@@ -61,6 +61,12 @@ export const applyDarkMode = (isDark) => {
     document.documentElement.classList.remove('dark-mode');
     document.documentElement.setAttribute('data-theme', 'light');
   }
+  
+  // 触发自定义事件，通知其他组件更新颜色
+  window.dispatchEvent(new Event('theme-mode-changed'));
+  
+  // 触发窗口resize事件，使得图表等组件重绘
+  window.dispatchEvent(new Event('resize'));
 };
 
 // 切换深色模式

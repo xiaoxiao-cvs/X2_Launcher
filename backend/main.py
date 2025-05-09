@@ -1,152 +1,125 @@
 # -*- coding: utf-8 -*-
 """
-X2 Launcher 后端服务 - 重构版
-采用模块化设计，更好的错误处理和生命周期管理
+X2 Launcher 后端主应用
 """
 import os
 import sys
 import logging
-import asyncio
-import argparse
-from contextlib import asynccontextmanager
+import importlib
+from datetime import datetime
 from pathlib import Path
 
-# 设置编码
-os.environ["PYTHONIOENCODING"] = "utf-8"
-
-# 确保当前目录在路径中
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.append(current_dir)
-
-# 解析命令行参数
-parser = argparse.ArgumentParser(description='X2 Launcher 后端服务')
-parser.add_argument('--port', type=int, default=5000, help='服务端口号')
-parser.add_argument('--host', type=str, default="127.0.0.1", help='服务主机地址')
-args, unknown = parser.parse_known_args()
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(os.path.join(current_dir, "launcher.log"), encoding="utf-8")
-    ]
+    handlers=[logging.StreamHandler()]
 )
+
 logger = logging.getLogger("x2-launcher")
-
-try:
-    # 导入必要模块
-    import uvicorn
-    from fastapi import FastAPI, Depends, Request
-    from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.staticfiles import StaticFiles
-    from fastapi.responses import JSONResponse
-    
-    # 导入API路由
-    from routes.api import router as api_router
-    from routes.deploy import router as deploy_router
-    from routes.websocket import router as ws_router
-    
-    # 导入服务组件
-    from services.system_info import SystemInfoService
-    from services.instance_manager import InstanceManager
-    
-except ImportError as e:
-    logger.critical(f"导入必要模块失败: {e}")
-    logger.error("请确保安装了所有依赖: pip install fastapi uvicorn pydantic websockets aiofiles psutil")
-    sys.exit(1)
-
-# 应用生命周期管理
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 启动时执行
-    logger.info("X2 Launcher 服务启动中...")
-    
-    # 初始化服务组件
-    app.state.instance_manager = InstanceManager()
-    app.state.system_info = SystemInfoService()
-    
-    logger.info("服务组件初始化完成")
-    
-    try:
-        yield
-    finally:
-        # 关闭时执行
-        logger.info("X2 Launcher 服务正在关闭...")
-        # 清理资源
-        await app.state.instance_manager.shutdown()
-        logger.info("服务已安全关闭")
-
-# 全局异常处理
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"全局异常: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "内部服务器错误", "message": str(exc)}
-    )
+logger.info("正在启动X2 Launcher后端...")
 
 # 创建FastAPI应用
-def create_app() -> FastAPI:
-    app = FastAPI(
-        title="X² Launcher API",
-        description="MaiBot 启动器后端服务",
-        version="0.2.0",
-        lifespan=lifespan
-    )
-    
-    # 配置全局异常处理
-    app.add_exception_handler(Exception, global_exception_handler)
-    
-    # 添加CORS中间件
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],  # 生产环境应该限制
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    
-    # 注册API路由
-    app.include_router(api_router, prefix="/api")
-    app.include_router(deploy_router, prefix="/api")
-    app.include_router(ws_router)
-    
-    # 挂载前端静态文件
-    frontend_dir = Path(current_dir).parent / "frontend" / "dist"
-    if frontend_dir.exists():
-        app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="static")
-        logger.info(f"前端静态文件已挂载: {frontend_dir}")
-    else:
-        logger.warning(f"前端静态文件目录不存在: {frontend_dir}")
-    
-    return app
+app = FastAPI(
+    title="X2 Launcher API",
+    description="X2 Launcher后端API",
+    version="1.0.0"
+)
 
-# 实例化应用
-app = create_app()
+# 添加CORS中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 在生产环境中应该限制为特定来源
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# 主入口
-if __name__ == "__main__":
+# 设置API路由前缀
+api_router = APIRouter(prefix="/api")
+
+# 健康检查端点
+@api_router.get("/health")
+async def health_check():
+    """健康检查API"""
+    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
+# 引入其他路由
+try:
+    # 首先导入deploy路由
+    from routes.deploy import router as deploy_router
+    
+    # 1. 先注册到根路由 - 处理不带/api前缀的请求 (如 /deploy)
+    app.include_router(deploy_router)
+    logger.info("已将部署路由注册到根路径")
+    
+    # 2. 再注册到API路由 - 处理带/api前缀的请求 (如 /api/deploy)
+    api_router.include_router(deploy_router)
+    logger.info("已将部署路由注册到API路径")
+    
+    # 加载其他API路由
     try:
-        print(f"✨ X² Launcher 后端服务启动中... (端口: {args.port})")
+        from routes.api import router as api_routes
+        api_router.include_router(api_routes)
+        logger.info("已加载通用API路由")
+    except ImportError as e:
+        logger.warning(f"加载通用API路由失败: {e}")
+    
+    try:
+        from routes.websocket import router as ws_router
+        api_router.include_router(ws_router)
+        logger.info("已加载WebSocket路由")
+    except ImportError as e:
+        logger.warning(f"加载WebSocket路由失败: {e}")
         
-        # 检查必要文件夹
-        os.makedirs(os.path.join(current_dir, "logs"), exist_ok=True)
-        os.makedirs(os.path.join(current_dir, "temp"), exist_ok=True)
-        
-        # 启动服务器
-        uvicorn.run(
-            "main:app",
-            host=args.host,
-            port=args.port,
-            log_level="info",
-            reload=True  # 开发模式启用热重载
+except ImportError as e:
+    logger.error(f"加载部署路由失败: {e}", exc_info=True)
+
+# 包含API路由到主应用
+app.include_router(api_router)
+
+# 设置前端静态文件服务
+try:
+    frontend_path = Path(__file__).parent.parent / "frontend" / "dist"
+    if frontend_path.exists():
+        app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="static")
+        logger.info(f"已挂载前端静态文件: {frontend_path}")
+    else:
+        logger.warning(f"前端目录不存在: {frontend_path}")
+except Exception as e:
+    logger.error(f"挂载前端静态文件失败: {e}", exc_info=True)
+
+# 添加全局异常处理
+@app.exception_handler(404)
+async def not_found_exception_handler(request: Request, exc):
+    path = request.url.path
+    logger.warning(f"404请求: {path}")
+    
+    # 如果是API请求返回JSON
+    if path.startswith("/api/"):
+        return {"status": "error", "message": "API端点不存在", "path": path, "code": 404}
+    
+    # 否则返回前端应用(SPA路由)
+    if frontend_path.exists():
+        return StaticFiles(directory=str(frontend_path), html=True).get_response(
+            "index.html", 
+            scope=request.scope
         )
-    except KeyboardInterrupt:
-        print("\n👋 服务已手动终止")
-    except Exception as e:
-        logger.critical(f"启动服务器失败: {e}", exc_info=True)
-        print(f"\n❌ 启动失败: {e}")
-        print("请运行 python diagnostic.py 进行诊断")
-        sys.exit(1)
+    
+    # 前端不存在时返回简单消息
+    return {"status": "error", "message": "资源不存在", "path": path}
+
+if __name__ == "__main__":
+    import uvicorn
+    
+    # 可以通过环境变量覆盖端口和主机
+    port = int(os.environ.get("X2_PORT", 5000))
+    host = os.environ.get("X2_HOST", "127.0.0.1")
+    
+    logger.info(f"启动服务器，监听地址: {host}:{port}")
+    uvicorn.run("main:app", host=host, port=port, reload=True)

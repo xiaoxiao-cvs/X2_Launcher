@@ -20,7 +20,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo 步骤1: 正在安装前端依赖项...
-cd "%~dp0frontend"
+cd /d "%~dp0frontend"
 if not exist node_modules (
     echo 首次安装前端依赖项，这可能需要几分钟...
     call npm install
@@ -32,11 +32,14 @@ if not exist node_modules (
 )
 
 echo.
-echo 前端依赖项安装成功！
+echo 前端依赖项安装完成!
+echo 运行前端开发依赖安装工具...
+node scripts/install-deps.js
+if %errorlevel% neq 0 goto :frontend_error
 echo.
 
 echo 步骤2: 正在安装后端依赖项...
-cd "%~dp0backend"
+cd /d "%~dp0backend"
 if exist requirements.txt (
     echo 检测到 requirements.txt 文件
     python -m pip install -U pip

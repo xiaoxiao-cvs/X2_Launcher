@@ -119,6 +119,19 @@ html.dark-mode .metric-item {
   background-color: var(--card-bg-secondary, #252525);
 }
 
+html.dark-mode .metric-value {
+  color: var(--el-text-color-primary);
+}
+
+html.dark-mode .status-card {
+  background-color: rgba(30, 35, 42, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+html.dark-mode .status-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
 @media (max-width: 768px) {
   .performance-dashboard {
     grid-template-columns: 1fr;

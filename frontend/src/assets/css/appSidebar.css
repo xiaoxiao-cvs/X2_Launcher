@@ -1,67 +1,34 @@
-/* 侧边导航栏样式 */
+/* 侧边导航栏样式 - 重构以解决渲染重叠问题 */
 .side-nav {
   width: 64px;
   height: 100vh;
-  background: var(--sidebar-bg, rgba(0, 0, 0, 0.3));
+  /* 使用简单的背景色和毛玻璃效果 */
+  background: rgba(30, 35, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px 0;
-  transition: all 0.3s ease;
-  overflow: hidden; /* 修改为hidden，防止出现外部滚动条 */
-  isolation: isolate; /* 创建新的层叠上下文 */
+  transition: width 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
   z-index: 110;
   flex-shrink: 0;
   position: fixed;
   left: 0;
   top: 0;
   box-sizing: border-box;
-  border-radius: 0 12px 12px 0; /* 右侧圆角 */
-  box-shadow: var(--sidebar-shadow);
+  border-radius: 0 12px 12px 0;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* 为阴影添加额外空间 */
+/* 移除可能导致重叠的伪元素 */
 .side-nav::after {
-  content: '';
-  position: absolute;
-  right: -12px; /* 等于圆角半径 */
-  top: 0;
-  bottom: 0;
-  width: 12px;
-  background: inherit;
-  z-index: -1; /* 置于主体后方 */
+  display: none;
 }
 
-/* 添加内部容器以处理滚动 */
-.side-nav-content {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: auto; /* 只在内部容器保留滚动 */
-  overflow-x: hidden; /* 修改为hidden，避免水平滚动条 */
-  padding: 0 5px; /* 内部容器的内边距 */
-  box-sizing: border-box;
-  border-radius: 0 12px 12px 0; /* 右侧圆角 */
-  background: inherit; /* 继承外部容器背景 */
-}
-
-/* 确保展开状态下保持圆角 */
-.side-nav.expanded {
-  width: 200px;
-  align-items: flex-start;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 0 12px 12px 0; /* 保持右侧圆角 */
-}
-
-.side-nav.expanded .side-nav-content {
-  padding: 0 15px;
-  align-items: flex-start;
-}
-
-/* 导航栏Logo样式 - 修改为不可点击但保留视觉效果 */
+/* 简化内部结构，减少嵌套 */
 .nav-logo {
   display: flex;
   align-items: center;
@@ -71,16 +38,27 @@
   border-radius: 8px;
   justify-content: center;
   transition: all 0.3s;
-  cursor: default; /* 改为默认光标，表明不可点击 */
+  cursor: default;
+  color: rgb(255, 255, 255);
+}
+
+/* 添加logo图标样式 */
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* 确保展开状态下的宽度固定 */
+.side-nav.expanded {
+  width: 220px;
+  align-items: flex-start;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .side-nav.expanded .nav-logo {
   justify-content: flex-start;
-}
-
-/* 保留悬停效果视觉效果 */
-.nav-logo:hover {
-  background-color: var(--hover-color, rgba(255, 255, 255, 0.1));
 }
 
 .nav-logo .el-icon {
@@ -94,6 +72,7 @@
   white-space: nowrap;
   transition: opacity 0.3s;
   display: none;
+  color: white;
 }
 
 .side-nav.expanded .nav-text {
@@ -101,39 +80,46 @@
   display: inline;
 }
 
-/* 导航项容器 */
+/* 导航项容器 - 简化结构 */
 .nav-items {
   display: flex;
   flex-direction: column;
   width: 100%;
   flex: 1;
   gap: 8px;
-  overflow: visible; /* 移除滚动，由父容器.side-nav-content控制滚动 */
   padding: 5px 0;
 }
 
-/* 导航项样式 */
+/* 导航项样式 - 修改为圆角方形，长宽等高 */
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 12px 0;
+  height: 40px; /* 固定高度 */
   cursor: pointer;
-  width: 100%;
+  width: calc(100% - 10px); /* 留出一点边距 */
+  margin: 0 5px; /* 水平居中 */
   justify-content: center;
-  border-radius: 8px;
-  color: var(--el-text-color-regular);
-  transition: all 0.3s;
+  border-radius: 8px; /* 圆角 */
+  color: rgba(255, 255, 255, 0.7);
+  transition: background-color 0.3s, color 0.3s;
   position: relative;
+  z-index: 1;
 }
 
 .nav-item:hover {
-  background-color: var(--hover-color, rgba(255, 255, 255, 0.1));
-  color: var(--el-text-color-primary);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .nav-item.active {
-  background-color: var(--active-color, rgba(255, 255, 255, 0.15));
-  color: var(--el-color-primary);
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-left: 3px solid var(--el-color-primary, #4a7eff); /* 左侧边框替代伪元素 */
+}
+
+/* 移除旧的伪元素指示器 */
+.nav-item.active::before {
+  display: none; /* 隐藏旧的选中指示器 */
 }
 
 .side-nav.expanded .nav-item {
@@ -153,11 +139,14 @@
   padding: 12px 0;
   cursor: pointer;
   width: 100%;
-  margin-top: auto; /* 推到底部 */
+  margin-top: auto;
   border-radius: 8px;
   transition: all 0.3s;
-  flex-shrink: 0; /* 防止被压缩 */
-  margin-bottom: 10px; /* 底部间距 */
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 100; /* 提高z-index确保可点击 */
+  position: relative; /* 确保z-index生效 */
+  user-select: none; /* 防止文本被选择 */
 }
 
 .side-nav.expanded .nav-bottom {
@@ -166,17 +155,44 @@
 }
 
 .nav-bottom:hover {
-  background-color: var(--hover-color, rgba(255, 255, 255, 0.1));
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
-/* 深色模式适配 */
-:deep(.dark-mode) .side-nav {
-  background-color: rgba(0, 0, 0, 0.5);
-  border-right-color: rgba(255, 255, 255, 0.05);
+/* 添加鼠标悬停效果增强用户体验 */
+.nav-bottom:active {
+  background-color: rgba(255, 255, 255, 0.25);
+  transform: scale(0.98);
 }
 
-:deep(.dark-mode) .nav-item.active {
-  background: rgba(255, 255, 255, 0.15);
+/* 浅色模式样式 */
+html:not(.dark-mode) .side-nav {
+  background: rgba(240, 245, 255, 0.85);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+html:not(.dark-mode) .nav-text,
+html:not(.dark-mode) .nav-item,
+html:not(.dark-mode) .nav-bottom {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+html:not(.dark-mode) .nav-item:hover,
+html:not(.dark-mode) .nav-bottom:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 1);
+}
+
+html:not(.dark-mode) .nav-item.active {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: var(--el-color-primary);
+  border-left-color: var(--el-color-primary); /* 保证边框颜色一致 */
+}
+
+/* 深色模式下的视觉效果 */
+html.dark-mode .side-nav {
+  background: rgba(22, 25, 30, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* 响应式调整 */

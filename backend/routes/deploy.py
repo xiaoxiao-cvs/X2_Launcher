@@ -14,6 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Depends
 
 logger = logging.getLogger("x2-launcher.deploy")
 
+# 使用空字符串作为标签，移除前缀，确保能匹配多种路径模式
 router = APIRouter(tags=["deploy"])
 
 # 全局变量，存储运行中的任务和日志
@@ -21,8 +22,8 @@ running_tasks = {}
 task_logs = {}
 install_status = {"napcat_installing": False, "nonebot_installing": False}
 
-# 获取可用版本
-@router.get("/versions")
+# 获取可用版本 - 注意不要使用以/开头的路径
+@router.get("versions")
 async def get_available_versions():
     """获取可用的MaiBot版本"""
     try:
@@ -38,10 +39,11 @@ async def get_available_versions():
             "isLocalFallback": True
         }
 
-# 部署特定版本
-@router.post("/deploy/{version}")
+# 部署特定版本 - 支持/deploy/{version}路径
+@router.post("deploy/{version}")
 async def deploy_version(version: str, background_tasks: BackgroundTasks):
     """部署指定版本的MaiBot"""
+    logger.info(f"收到部署请求: {version}")
     instance_name = f"maibot_{version}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
     # 后台执行部署任务
@@ -54,8 +56,35 @@ async def deploy_version(version: str, background_tasks: BackgroundTasks):
         "timestamp": datetime.now().isoformat()
     }
 
+# 通用部署端点 - 支持 /deploy 路径
+@router.post("deploy")
+async def deploy_version_api(data: dict, background_tasks: BackgroundTasks):
+    """通过API路径接收部署请求
+    
+    Args:
+        data: 包含version和instance_name的数据
+    """
+    version = data.get("version", "latest")
+    instance_name = data.get("instance_name")
+    
+    logger.info(f"收到JSON部署请求: {version}, 实例名称: {instance_name}")
+    
+    if not instance_name:
+        # 如果没有提供实例名称，则生成一个
+        instance_name = f"maibot_{version}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    
+    # 后台执行部署任务
+    background_tasks.add_task(download_bot, instance_name, version)
+    
+    return {
+        "success": True,
+        "message": f"正在部署 {version} 版本",
+        "instance_name": instance_name,
+        "timestamp": datetime.now().isoformat()
+    }
+
 # 获取部署状态
-@router.get("/deploy/status/{instance_name}")
+@router.get("deploy/status/{instance_name}")
 async def get_deploy_status(instance_name: str):
     """获取部署状态"""
     if instance_name in running_tasks:
@@ -77,10 +106,11 @@ async def get_deploy_status(instance_name: str):
     
     return {"status": "not_found", "instance_name": instance_name}
 
-# 配置机器人
-@router.post("/install/configure")
+# 配置机器人 - 支持 /install/configure 路径
+@router.post("install/configure")
 async def configure_bot(config: Dict[str, Any], background_tasks: BackgroundTasks):
     """配置MaiBot"""
+    logger.info(f"收到配置请求: {config.get('instance_name')}")
     instance_name = config.get("instance_name")
     if not instance_name:
         raise HTTPException(status_code=400, detail="缺少实例名称")
@@ -99,8 +129,8 @@ async def configure_bot(config: Dict[str, Any], background_tasks: BackgroundTask
         "instance_name": instance_name
     }
 
-# 获取安装状态
-@router.get("/install/status")
+# 获取安装状态 - 支持 /install-status 路径
+@router.get("install-status")
 async def get_install_status():
     """获取安装状态"""
     return install_status
