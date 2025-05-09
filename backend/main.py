@@ -21,7 +21,7 @@ if current_dir not in sys.path:
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(os.path.join(current_dir, "launcher.log"), encoding="utf-8")
