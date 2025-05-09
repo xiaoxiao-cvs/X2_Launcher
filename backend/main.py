@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 import asyncio
+import argparse
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -17,6 +18,12 @@ os.environ["PYTHONIOENCODING"] = "utf-8"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
+
+# 解析命令行参数
+parser = argparse.ArgumentParser(description='X2 Launcher 后端服务')
+parser.add_argument('--port', type=int, default=5000, help='服务端口号')
+parser.add_argument('--host', type=str, default="127.0.0.1", help='服务主机地址')
+args, unknown = parser.parse_known_args()
 
 # 配置日志
 logging.basicConfig(
@@ -122,7 +129,7 @@ app = create_app()
 # 主入口
 if __name__ == "__main__":
     try:
-        print("✨ X² Launcher 后端服务启动中...")
+        print(f"✨ X² Launcher 后端服务启动中... (端口: {args.port})")
         
         # 检查必要文件夹
         os.makedirs(os.path.join(current_dir, "logs"), exist_ok=True)
@@ -131,8 +138,8 @@ if __name__ == "__main__":
         # 启动服务器
         uvicorn.run(
             "main:app",
-            host="127.0.0.1",
-            port=5000,
+            host=args.host,
+            port=args.port,
             log_level="info",
             reload=True  # 开发模式启用热重载
         )

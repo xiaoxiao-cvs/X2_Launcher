@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run check-deps && vite",
+    "dev": "vite --port 3000",
     "dev:backend": "cd ../backend && python main.py",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "vite build",

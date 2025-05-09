@@ -59,3 +59,15 @@ ipcRenderer.on('backend-error', (_, message) => {
 
 // 通知渲染进程预加载已完成
 console.log('预加载脚本已执行');
+
+// 预加载脚本，可用于在渲染进程中提供 Node.js API
+window.addEventListener('DOMContentLoaded', () => {
+  const replaceText = (selector, text) => {
+    const element = document.getElementById(selector);
+    if (element) element.innerText = text;
+  };
+
+  for (const dependency of ['chrome', 'node', 'electron']) {
+    replaceText(`${dependency}-version`, process.versions[dependency]);
+  }
+});

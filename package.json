@@ -1,17 +1,28 @@
 {
   "name": "x2-launcher",
   "version": "1.0.0",
-  "private": true,
-  "type": "module",
+  "description": "X2 Launcher - MaiBot 启动器",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "cd frontend && npx vite",
-    "dev:backend": "cd backend && python main.py",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
-    "build": "cd frontend && npx vite build",
-    "preview": "cd frontend && npx vite preview",
-    "electron:dev": "electron electron/main.js"
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:electron\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "build": "cd frontend && npm run build && cd ../backend && pyinstaller --onefile main.py",
+    "start": "electron ."
   },
+  "dependencies": {
+    "electron": "^25.9.8",
+    "portfinder": "^1.0.37"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "wait-on": "^7.2.0"
+  },
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
   "build": {
     "appId": "com.x2launcher.app",
     "productName": "X² Launcher",
@@ -41,14 +52,5 @@
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "assets/app.ico"
     }
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "electron": "^29.1.0",
-    "electron-builder": "^24.13.3",
-    "wait-on": "^7.2.0"
-  },
-  "dependencies": {
-    "python-shell": "^5.0.0"
   }
 }
