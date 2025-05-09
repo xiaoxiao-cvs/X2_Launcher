@@ -130,6 +130,7 @@ import { ref, computed, watch, onUnmounted, inject } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Download, User } from '@element-plus/icons-vue';
 import axios from 'axios';
+import * as deployApi from '../../api/deploy'; // 导入新的API服务
 
 // ===================================
 // 这些是Vue编译器宏，不需要导入
@@ -186,34 +187,13 @@ const fetchVersions = async () => {
     
     while (!success && retryCount <= maxRetries) {
       try {
-        const response = await axios.get('/api/versions', {
-          // 增加超时
-          timeout: 10000,
-          // 添加参数以使用缓存版本
-          params: {
-            useCache: retryCount > 0 ? 'true' : 'false',
-            fallback: retryCount > 0 ? 'true' : 'false'
-          }
-        });
+        // 使用新的API服务获取版本
+        const versions = await deployApi.fetchVersions();
 
-        if (response.data && response.data.versions && response.data.versions.length > 0 && 
-            !(response.data.versions.length === 1 && response.data.versions[0] === 'NaN')) {
-          availableVersions.value = response.data.versions;
+        if (versions && versions.length > 0 && 
+            !(versions.length === 1 && versions[0] === 'NaN')) {
+          availableVersions.value = versions;
           success = true;
-          
-          if (response.data.fromCache) {
-            console.log('使用缓存版本列表');
-          }
-          
-          // 如果是使用备选版本
-          if (response.data.isLocalFallback) {
-            addLog({
-              time: formatTime(new Date()),
-              source: 'system',
-              level: 'WARNING',
-              message: '使用本地备用版本列表，可能不是最新版本'
-            });
-          }
         } else {
           throw new Error('无效的版本数据');
         }
@@ -273,17 +253,17 @@ const installVersion = async () => {
       message: `$ 开始安装 ${selectedVersion.value}...`
     });
     
-    // 1. 首先安装MaiBot实例
-    const response = await axios.post(`/api/deploy/${selectedVersion.value}`);
+    // 1. 首先使用新API安装MaiBot实例
+    const deployResult = await deployApi.deployVersion(selectedVersion.value);
     
-    if (!response.data.success) {
-      ElMessage.error(response.data.message || '安装失败');
+    if (!deployResult.success) {
+      ElMessage.error(deployResult.message || '安装失败');
       installStatus.value = 'failed';
       addLog({
         time: formatTime(new Date()),
         source: 'command',
         level: 'ERROR',
-        message: `$ 无法安装 ${selectedVersion.value}: ${response.data.message || '未知错误'}`
+        message: `$ 无法安装 ${selectedVersion.value}: ${deployResult.message || '未知错误'}`
       });
       installLoading.value = false;
       return;
@@ -343,8 +323,8 @@ const installVersion = async () => {
         });
       }
       
-      // 开始进行配置并安装
-      const configResponse = await axios.post('/api/install/configure', {
+      // 开始进行配置并安装 - 使用新API
+      const configResponse = await deployApi.configureBot({
         qq_number: qqNumber.value,
         install_napcat: installNapcat.value,
         install_nonebot: installNonebot.value,
@@ -357,7 +337,7 @@ const installVersion = async () => {
         }
       });
       
-      if (configResponse.data.success) {
+      if (configResponse.success) {
         addLog({
           time: formatTime(new Date()),
           source: 'command',
@@ -369,7 +349,7 @@ const installVersion = async () => {
           time: formatTime(new Date()),
           source: 'command',
           level: 'WARNING',
-          message: `$ Bot配置部分失败: ${configResponse.data.message || '未知原因'}`
+          message: `$ Bot配置部分失败: ${configResponse.message || '未知原因'}`
         });
       }
       
@@ -508,8 +488,8 @@ const emitter = inject('emitter', null);
 // 检查安装状态API查询接口
 const checkInstallStatus = async () => {
   try {
-    const response = await axios.get('/api/install/status');
-    return response.data;
+    // 使用新API检查安装状态
+    return await deployApi.checkInstallStatus();
   } catch (error) {
     console.error('获取安装状态失败:', error);
     return { napcat_installing: false, nonebot_installing: false };

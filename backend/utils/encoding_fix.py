@@ -1,48 +1,44 @@
 # -*- coding: utf-8 -*-
 """
-修复Windows下的编码问题，确保能正确处理中文
+处理Python编码问题，确保正确支持中文
 """
 import os
 import sys
 import locale
 
-# 标记是否成功修复编码
+# 用于跟踪是否修复成功
 encoding_fixed = False
 
 try:
-    # 检查当前编码
-    current_encoding = locale.getpreferredencoding()
-    print(f"当前系统编码: {current_encoding}")
-    
-    # 修正环境变量编码
-    if sys.platform == 'win32':
-        os.environ['PYTHONIOENCODING'] = 'utf-8'
+    # 设置控制台编码为UTF-8
+    if sys.platform == "win32":
+        # Windows平台
+        import ctypes
         
-        # 如果不是utf-8，尝试修复
-        if current_encoding.upper() != 'UTF-8':
-            # 尝试设置控制台编码
-            os.system('chcp 65001 > nul')
-            print("已尝试将控制台编码设置为UTF-8 (CP65001)")
-            
-            # 设置输出编码
-            if sys.stdout.encoding != 'utf-8':
-                if hasattr(sys.stdout, 'reconfigure'):
-                    sys.stdout.reconfigure(encoding='utf-8')
-                    print("已重配置标准输出为UTF-8")
-                else:
-                    print("警告：无法重配置输出流编码")
-            
-            # 设置输入编码
-            if sys.stdin.encoding != 'utf-8':
-                if hasattr(sys.stdin, 'reconfigure'):
-                    sys.stdin.reconfigure(encoding='utf-8')
+        # 尝试设置控制台代码页为UTF-8 (Code Page 65001)
+        try:
+            ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+            ctypes.windll.kernel32.SetConsoleCP(65001)
+        except Exception as e:
+            print(f"设置控制台代码页失败: {e}")
     
-    # 验证是否设置成功
-    if sys.stdout.encoding.upper() == 'UTF-8':
+    # 设置环境变量
+    os.environ["PYTHONIOENCODING"] = "utf-8"
+    
+    # 检查编码设置
+    console_encoding = sys.stdout.encoding
+    python_encoding = sys.getdefaultencoding()
+    locale_encoding = locale.getpreferredencoding()
+    
+    # 验证编码是否为UTF-8
+    if console_encoding.lower() == 'utf-8' and python_encoding.lower() == 'utf-8':
         encoding_fixed = True
-        print("编码修正成功：现在使用UTF-8")
-    else:
-        print(f"注意：输出编码仍为 {sys.stdout.encoding}，可能会有中文显示问题")
+    
+    if not encoding_fixed:
+        print(f"警告: 编码可能不是UTF-8")
+        print(f"控制台编码: {console_encoding}")
+        print(f"Python默认编码: {python_encoding}")
+        print(f"系统首选编码: {locale_encoding}")
     
 except Exception as e:
     print(f"编码修复失败: {e}")

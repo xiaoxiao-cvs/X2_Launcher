@@ -318,17 +318,18 @@ const checkApiConnection = async () => {
 <style>
 @import './assets/css/app.css';
 
-/* 添加侧边栏和内容区域的过渡样式 */
+/* 修改为使用CSS变量实现一致的边距 */
 .content-area {
-  transition: margin-left 0.3s ease, padding-left 0.3s ease;
-  margin-left: 64px; /* 默认侧边栏收起状态下的边距 */
-  width: calc(100% - 64px);
+  transition: margin-left 0.3s ease, width 0.3s ease;
+  margin-left: var(--sidebar-width, 64px);
+  width: var(--content-width, calc(100% - 64px));
   box-sizing: border-box;
 }
 
+/* 移除固定值，使用CSS变量 */
 .content-area.sidebar-expanded {
-  margin-left: 220px; /* 侧边栏展开时的边距 */
-  width: calc(100% - 220px);
+  margin-left: var(--sidebar-width, 220px);
+  width: var(--content-width, calc(100% - 220px));
 }
 
 /* 统一所有动画效果 */

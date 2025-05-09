@@ -15,20 +15,19 @@ html, body {
 
 /* 删除旧的侧边栏相关样式 - 已清除 */
 
-/* 统一内容区域宽度控制 */
+/* 统一内容区域宽度控制 - 修改为使用CSS变量 */
 .content-area {
   overflow-x: hidden;
   box-sizing: border-box;
-  width: 100%;
+  width: var(--content-width, calc(100% - 64px));
   transition: margin-left 0.3s ease, width 0.3s ease;
-  margin-left: 64px; /* 默认侧边栏收起状态下的边距 */
-  width: calc(100% - 64px);
+  margin-left: var(--sidebar-width, 64px); /* 使用CSS变量 */
 }
 
 /* 侧边栏展开时的内容区域样式 */
 .content-area.sidebar-expanded {
-  margin-left: 220px; /* 侧边栏展开时的边距 */
-  width: calc(100% - 220px);
+  margin-left: var(--sidebar-width, 220px); /* 使用CSS变量 */
+  width: var(--content-width, calc(100% - 220px));
 }
 
 /* 所有内容容器继承内容区域的宽度设置 */
@@ -37,16 +36,24 @@ html, body {
   box-sizing: border-box;
 }
 
-/* 全局的响应式断点处理 */
+/* 确保所有标签页内容都有正确的边距 */
+.logs-tab, 
+.instances-tab, 
+.downloads-tab, 
+.settings-tab,
+.plugins-tab,
+.tab-content {
+  padding: 20px;
+  box-sizing: border-box;
+  margin-left: 15px; /* 添加左边距，避免内容直接贴着侧边栏 */
+  width: calc(100% - 15px); /* 减去左边距的宽度 */
+}
+
+/* 全局的响应式断点处理 - 更新为使用CSS变量 */
 @media (max-width: 1200px) {
   .content-area {
-    margin-left: 50px;
-    width: calc(100% - 50px);
-  }
-  
-  .content-area.sidebar-expanded {
-    margin-left: 180px;
-    width: calc(100% - 180px);
+    margin-left: var(--sidebar-width, 64px);
+    width: var(--content-width, calc(100% - 64px));
   }
 }
 
@@ -56,9 +63,14 @@ html, body {
     width: 100%;
   }
   
-  .content-area.sidebar-expanded {
-    margin-left: 0;
-    width: 100%;
+  .logs-tab, 
+  .instances-tab, 
+  .downloads-tab, 
+  .settings-tab,
+  .plugins-tab,
+  .tab-content {
+    margin-left: 5px;
+    width: calc(100% - 5px);
   }
   
   /* 小屏幕上强制折叠侧边栏 */

@@ -42,6 +42,14 @@
   overflow-y: auto;
 }
 
+.home-content {
+  flex: 1;
+  padding: 20px;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+}
+
 /* 顶部标题和控件区域 */
 .header {
   display: flex;
@@ -233,10 +241,11 @@
   opacity: 1;
 }
 
-.home-content {
+/* 移除与全局样式冲突的边距设置 */
+/* .home-content {
   margin-left: calc(var(--sidebar-indicator-width) + 15px);
   transition: margin-left 0.3s ease;
-}
+} */
 
 /* 深色模式适配 */
 .dark-mode .home-container:before {

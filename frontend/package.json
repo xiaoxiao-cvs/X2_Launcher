@@ -1,14 +1,16 @@
 {
-  "name": "x2-launcher",
+  "name": "x2-launcher-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "install-deps": "node ./scripts/install-deps.js",
-    "dev": "npm run install-deps && vite",
-    "dev:backend": "cd .. && python -m backend.main",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "dev": "npm run check-deps && vite",
+    "dev:backend": "cd ../backend && python main.py",
+    "dev:full": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "vite build",
     "preview": "vite preview",
+    "check-deps": "node scripts/install-deps.js",
+    "install-deps": "node scripts/install-deps.js",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
@@ -21,7 +23,7 @@
     "@element-plus/icons-vue": "2.3.1",
     "@vitejs/plugin-vue": "4.5.2",
     "autoprefixer": "10.4.16",
-    "concurrently": "8.2.2",
+    "concurrently": "^8.0.1",
     "postcss-preset-env": "10.1.6",
     "vite": "5.0.10"
   }

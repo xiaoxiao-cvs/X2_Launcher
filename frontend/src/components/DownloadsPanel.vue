@@ -38,6 +38,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, inject, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import axios from 'axios';
+import { WebSocketService } from '../services/websocket';
 
 import InstallConfig from './downloads/InstallConfig.vue';
 import LogsDisplay from './downloads/LogsDisplay.vue';
@@ -216,9 +217,15 @@ const setupWebSocket = () => {
   }
   
   try {
-    wsConnection = new WebSocket(wsUrl);
+    // 使用WebSocketService代替原生WebSocket
+    wsConnection = new WebSocketService({
+      url: wsUrl,
+      reconnectDelay: 3000,
+      maxReconnectAttempts: 5,
+      autoReconnect: true
+    });
     
-    wsConnection.onopen = () => {
+    wsConnection.on('open', () => {
       console.log('WebSocket连接已建立');
       addLog({
         time: formatTime(new Date()),
@@ -234,11 +241,11 @@ const setupWebSocket = () => {
         level: 'INFO',
         message: '$ 开始安装过程，请等待...'
       });
-    };
+    });
     
-    wsConnection.onmessage = (event) => {
+    wsConnection.on('message', (data) => {
       try {
-        const logData = JSON.parse(event.data);
+        const logData = typeof data === 'string' ? JSON.parse(data) : data;
         
         // 美化日志消息，去除多余的空格和换行
         if (logData.message && typeof logData.message === 'string') {
@@ -340,9 +347,9 @@ const setupWebSocket = () => {
       } catch (error) {
         console.error('处理WebSocket消息失败:', error);
       }
-    };
+    });
     
-    wsConnection.onerror = (error) => {
+    wsConnection.on('error', (error) => {
       console.error('WebSocket错误:', error);
       addLog({
         time: formatTime(new Date()),
@@ -350,19 +357,19 @@ const setupWebSocket = () => {
         level: 'ERROR',
         message: 'WebSocket连接错误'
       });
-    };
+    });
     
-    wsConnection.onclose = () => {
-      console.log('WebSocket连接已关闭，尝试重连...');
+    wsConnection.on('close', () => {
+      console.log('WebSocket连接已关闭');
       addLog({
         time: formatTime(new Date()),
         source: 'system',
         level: 'WARNING',
         message: 'WebSocket连接已关闭，正在重连...'
       });
-      // 使用延时重连，避免连续失败重连太快
-      setTimeout(setupWebSocket, 3000);
-    };
+    });
+    
+    wsConnection.connect();
   } catch (error) {
     console.error('创建WebSocket连接失败:', error);
     addLog({
@@ -425,7 +432,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   // 停止所有定时器和连接
   if (wsConnection) {
-    wsConnection.close();
+    wsConnection.disconnect();
   }
   
   stopLogPolling();
