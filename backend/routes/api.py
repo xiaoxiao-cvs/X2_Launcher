@@ -135,3 +135,16 @@ async def get_system_logs():
     except Exception as e:
         logger.error(f"获取系统日志失败: {e}", exc_info=True)
         return {"logs": [], "error": str(e)}
+
+# 实例统计API
+@router.get("/instance-stats")
+async def get_instance_stats(request: Request):
+    """获取实例统计数据"""
+    try:
+        # 使用实例管理器
+        instance_manager = request.app.state.instance_manager
+        stats = await instance_manager.get_instance_stats()
+        return stats
+    except Exception as e:
+        logger.error(f"获取实例统计数据失败: {e}", exc_info=True)
+        return {"total": 0, "running": 0, "error": str(e)}

@@ -16,7 +16,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-title">运行中实例</div>
-          <div class="stat-value">{{ stats.runningInstances }}/{{ stats.totalInstances }}</div>
+          <div class="stat-value">{{ stats.runningInstances }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-title">日志异常数</div>
@@ -74,6 +74,7 @@ import * as echarts from 'echarts';
 import axios from 'axios';
 // 更改为正确的CSS导入路径
 import '../assets/css/homeView.css';
+import { fetchInstanceStats } from '../api/instances';
 
 const emitter = inject('emitter', null);
 const isDarkMode = inject('darkMode', ref(false)); // 从App.vue注入
@@ -521,17 +522,15 @@ const fetchPerformanceData = async () => {
   }
 };
 
-// 获取实例列表
+// 获取实例列表及统计数据
 const fetchInstances = async () => {
   try {
-    const response = await axios.get('/api/instances');
-    if (response.data && response.data.instances) {
-      const instances = response.data.instances;
-      stats.value.totalInstances = instances.length;
-      stats.value.runningInstances = instances.filter(i => i.status === 'running').length;
-    }
+    // 使用API获取实例统计数据
+    const statsData = await fetchInstanceStats();
+    stats.value.totalInstances = statsData.total || 0;
+    stats.value.runningInstances = statsData.running || 0;
   } catch (error) {
-    console.warn('获取实例列表失败:', error);
+    console.warn('获取实例统计数据失败:', error);
     // 设置模拟数据
     stats.value.totalInstances = 3;
     stats.value.runningInstances = 1;

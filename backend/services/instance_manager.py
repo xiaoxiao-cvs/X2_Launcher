@@ -67,6 +67,49 @@ class InstanceManager:
         
         return instances
     
+    async def get_instance_stats(self) -> Dict[str, Any]:
+        """获取实例统计数据，包括总数和运行中的数量"""
+        total_instances = 0
+        running_instances = 0
+        
+        try:
+            # 统计基础目录中的实例总数
+            if os.path.exists(self.base_dir):
+                total_instances = len([
+                    folder for folder in os.listdir(self.base_dir) 
+                    if self._is_valid_instance(os.path.join(self.base_dir, folder))
+                ])
+            
+            # 统计maibot-vision目录中的配置文件数量
+            vision_config_dir = os.path.join(os.path.dirname(self.base_dir), "maibot-vision")
+            if os.path.exists(vision_config_dir):
+                json_files = [f for f in os.listdir(vision_config_dir) 
+                             if f.endswith('.json') and os.path.isfile(os.path.join(vision_config_dir, f))]
+                # 如果vision配置文件更多，则使用配置文件数量
+                total_instances = max(total_instances, len(json_files))
+            
+            # 统计运行中的实例数量
+            running_instances = len(self.running_instances)
+            
+        except Exception as e:
+            logger.error(f"获取实例统计数据失败: {e}", exc_info=True)
+        
+        return {
+            "total": total_instances,
+            "running": running_instances
+        }
+    
+    def _is_valid_instance(self, instance_path: str) -> bool:
+        """检查路径是否是有效的实例目录"""
+        if not os.path.isdir(instance_path):
+            return False
+            
+        # 检查是否是MaiBot实例（至少应该有MaiBot和Adapter文件夹）
+        maibot_dir = os.path.join(instance_path, "MaiBot")
+        adapter_dir = os.path.join(instance_path, "MaiBot-Napcat-Adapter")
+        
+        return os.path.exists(maibot_dir) and os.path.exists(adapter_dir)
+    
     def _check_services(self, instance_name: str) -> Dict[str, str]:
         """检查实例的各个服务状态"""
         # 这里可以实现检查NapCat、NoneBot等服务的实际状态

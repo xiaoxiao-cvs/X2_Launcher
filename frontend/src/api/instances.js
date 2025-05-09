@@ -18,6 +18,20 @@ export const fetchInstances = async () => {
 };
 
 /**
+ * 获取实例统计数据
+ * @returns {Promise<Object>} 实例统计数据（总数和运行中的数量）
+ */
+export const fetchInstanceStats = async () => {
+  try {
+    const response = await axios.get('/api/instance-stats');
+    return response.data || { total: 0, running: 0 };
+  } catch (error) {
+    console.error('获取实例统计数据失败:', error);
+    return { total: 0, running: 0 };
+  }
+};
+
+/**
  * 获取系统状态
  * @returns {Promise<Object>} 系统状态
  */
@@ -176,6 +190,7 @@ export const fetchSystemMetrics = async () => {
 
 export default {
   fetchInstances,
+  fetchInstanceStats,
   fetchSystemStatus,
   startInstance,
   stopInstance,

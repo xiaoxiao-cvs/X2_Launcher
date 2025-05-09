@@ -10,6 +10,8 @@
     <!-- 安装配置组件 -->
     <InstallConfig @refresh-instances="refreshInstances" @add-log="addLog" />
 
+
+
     <!-- 日志显示组件 -->
     <LogsDisplay :logs="allLogs" @clear-logs="clearLogs" />
     
@@ -66,6 +68,14 @@ let logPollingInterval = null;
 // 计算属性
 const instanceList = computed(() => {
   return installHistory.value;
+});
+
+// 更新配置项，简化为必要的选项
+const config = ref({
+  name: '',
+  version: '0.6.3',  // 更新到最新版本
+  installNapcat: true,
+  installAdapter: true
 });
 
 // 刷新安装历史
@@ -414,6 +424,36 @@ function formatTime(date) {
     second: '2-digit'
   });
 }
+
+// 开始下载
+const startDownload = async () => {
+  if (!config.value.name) {
+    ElMessage.error('请输入实例名称');
+    return;
+  }
+
+  downloading.value = true;
+  addLog({
+    time: formatTime(new Date()),
+    level: 'INFO',
+    message: `开始下载 MaiBot ${config.value.version}`
+  });
+  
+  try {
+    const response = await axios.post('/api/download', {
+      name: config.value.name,
+      version: config.value.version,
+      options: {
+        napcat: config.value.installNapcat,
+        adapter: config.value.installAdapter
+      }
+    });
+
+    // ...existing code...
+  } catch (error) {
+    // ...existing code...
+  }
+};
 
 // 生命周期钩子
 onMounted(() => {
