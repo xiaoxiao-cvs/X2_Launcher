@@ -1,23 +1,15 @@
 <template>
-  <el-dialog
-    :modelValue="visible"
-    @update:modelValue="$emit('update:visible', $event)"
-    :title="`运行控制台 - ${instanceName}`"
-    width="80%"
-    :before-close="confirmClose">
+  <el-dialog :modelValue="visible" @update:modelValue="$emit('update:visible', $event)"
+    :title="`运行控制台 - ${instanceName}`" width="80%" :before-close="confirmClose">
     <div class="console-container">
       <div ref="consoleOutput" class="console-output">
         <div v-for="(log, index) in logs" :key="index" class="log-item">
-          <div class="log-content" :class="getLogLevel(log)">{{ log.message || log }}</div>
+          <div class="log-content" :class="getLogLevel(log)">{{ getLogMessage(log) }}</div>
         </div>
       </div>
     </div>
     <div class="console-input">
-      <el-input 
-        v-model="commandInput" 
-        placeholder="输入命令..." 
-        @keyup.enter="sendCommand"
-        :disabled="!instanceId">
+      <el-input v-model="commandInput" placeholder="输入命令..." @keyup.enter="sendCommand" :disabled="!instanceId">
         <template #append>
           <el-button @click="sendCommand" :disabled="!instanceId">发送</el-button>
         </template>
@@ -55,7 +47,10 @@ const props = defineProps({
   visible: Boolean,
   instanceId: String,
   instanceName: String,
-  logs: Array,
+  logs: {
+    type: Array,
+    default: () => []
+  },
   isRunning: Boolean
 });
 
@@ -70,21 +65,21 @@ const consoleOutput = ref(null);
 // 发送命令到实例
 const sendCommand = async (cmd) => {
   if (!props.instanceId) return;
-  
+
   const commandToSend = cmd || commandInput.value;
   if (!commandToSend.trim()) return;
-  
+
   try {
     // 发送命令到后端
     await axios.post(`/api/instance/${props.instanceId}/command`, {
       command: commandToSend
     });
-    
+
     // 清空输入框
     if (!cmd) {
       commandInput.value = '';
     }
-    
+
     // 滚动到底部
     scrollToBottom();
   } catch (error) {
@@ -96,12 +91,12 @@ const sendCommand = async (cmd) => {
 // 停止运行的实例
 const stopInstance = async () => {
   if (!props.instanceId) return;
-  
+
   try {
     // 发送Ctrl+C信号
     await sendCommand('\x03');  // Ctrl+C
     ElMessage.info('已发送停止信号');
-    
+
     // 通知父组件刷新实例状态
     emit('stop');
     emit('refresh');
@@ -128,21 +123,28 @@ const confirmClose = () => {
     }
   ).then(() => {
     emit('close');
-  }).catch(() => {});
+  }).catch(() => { });
 };
 
 // 获取日志级别
 const getLogLevel = (log) => {
+  if (!log) return '';
   if (typeof log === 'string') return '';
-  
+
   if (!log.level) return '';
-  
+
   const level = log.level.toLowerCase();
   if (level.includes('error')) return 'error';
   if (level.includes('warn')) return 'warning';
   if (level.includes('success')) return 'success';
   if (level === 'command') return 'command';
   return '';
+};
+
+// 获取日志消息内容
+const getLogMessage = (log) => {
+  if (!log) return '';
+  return typeof log === 'string' ? log : (log.message || '');
 };
 
 // 将控制台滚动到底部

@@ -57,7 +57,8 @@
             <div class="system-info-box">
               <div class="info-item"><strong>上传速率:</strong> {{ formatBytes(networkInfo.sentRate || 0) }}/s</div>
               <div class="info-item"><strong>下载速率:</strong> {{ formatBytes(networkInfo.receivedRate || 0) }}/s</div>
-              <div class="info-item"><strong>总流量:</strong> {{ formatBytes(networkInfo.sent + networkInfo.received) }}</div>
+              <div class="info-item"><strong>总流量:</strong> {{ formatBytes(networkInfo.sent + networkInfo.received) }}
+              </div>
             </div>
           </div>
           <div id="networkChart" ref="networkChartRef" class="chart"></div>
@@ -113,12 +114,12 @@ const maxNetworkKBs = ref(1024); // 默认1MB/s (1024KB/s)
 // 切换深色模式
 const toggleDarkMode = (value) => {
   localStorage.setItem('darkMode', value);
-  
+
   // 通知系统深色模式已更改
   if (emitter) {
     emitter.emit('dark-mode-changed', value);
   }
-  
+
   // 重绘图表以适应主题
   refreshCharts();
 };
@@ -174,12 +175,12 @@ const initCharts = () => {
             ])
           }
         }],
-        grid: { 
+        grid: {
           left: '8%',
           right: '5%',
           bottom: '10%',
           top: '15%',
-          containLabel: true 
+          containLabel: true
         },
         backgroundColor: isDarkMode.value ? 'rgba(40, 44, 52, 0.8)' : 'rgba(250, 250, 252, 0.8)'
       };
@@ -188,15 +189,15 @@ const initCharts = () => {
 
     if (memoryChartRef.value && !memoryChart.value) {
       memoryChart.value = echarts.init(memoryChartRef.value);
-      
+
       // 获取系统总内存并四舍五入到整数
-      const totalMemoryGB = memoryInfo.value.total 
-        ? Math.round(memoryInfo.value.total / (1024 * 1024 * 1024)) 
+      const totalMemoryGB = memoryInfo.value.total
+        ? Math.round(memoryInfo.value.total / (1024 * 1024 * 1024))
         : 16; // 默认为16GB
-      
+
       // 设置图表最大值为总内存
       maxMemoryGB.value = totalMemoryGB;
-      
+
       const memoryOption = {
         animation: false,
         title: {
@@ -212,9 +213,9 @@ const initCharts = () => {
         yAxis: {
           type: 'value',
           max: maxMemoryGB.value, // 使用系统总内存作为最大值
-          axisLabel: { 
-            color: isDarkMode.value ? '#eee' : '#333', 
-            formatter: '{value} GB' 
+          axisLabel: {
+            color: isDarkMode.value ? '#eee' : '#333',
+            formatter: '{value} GB'
           }
         },
         series: [{
@@ -236,12 +237,12 @@ const initCharts = () => {
             ])
           }
         }],
-        grid: { 
+        grid: {
           left: '8%',
           right: '5%',
           bottom: '10%',
           top: '15%',
-          containLabel: true 
+          containLabel: true
         },
         backgroundColor: isDarkMode.value ? 'rgba(40, 44, 52, 0.8)' : 'rgba(250, 250, 252, 0.8)'
       };
@@ -265,9 +266,9 @@ const initCharts = () => {
         yAxis: {
           type: 'value',
           max: maxNetworkKBs.value, // 使用动态最大值 - 默认1MB/s (1024KB/s)
-          axisLabel: { 
-            color: isDarkMode.value ? '#eee' : '#333', 
-            formatter: function(value) {
+          axisLabel: {
+            color: isDarkMode.value ? '#eee' : '#333',
+            formatter: function (value) {
               return value >= 1024 ? (value / 1024).toFixed(1) + ' MB/s' : value + ' KB/s';
             }
           }
@@ -291,12 +292,12 @@ const initCharts = () => {
             ])
           }
         }],
-        grid: { 
+        grid: {
           left: '8%',
           right: '5%',
           bottom: '10%',
           top: '15%',
-          containLabel: true 
+          containLabel: true
         },
         backgroundColor: isDarkMode.value ? 'rgba(40, 44, 52, 0.8)' : 'rgba(250, 250, 252, 0.8)'
       };
@@ -341,17 +342,17 @@ const updateChartData = (cpuUsage, memoryUsed, networkRate, metrics) => {
   // 更新时间标签
   timeLabels.value.shift();
   timeLabels.value.push(timeLabel);
-  
+
   // 更新CPU历史
   cpuHistory.value.shift();
   cpuHistory.value.push(Math.round(cpuUsage || 0));
-  
+
   // 更新内存历史 (转换为GB)
   memoryHistory.value.shift();
   const memGB = memoryUsed ? (memoryUsed / (1024 * 1024 * 1024)).toFixed(1) : 0;
   const memGBValue = parseFloat(memGB);
   memoryHistory.value.push(memGBValue);
-  
+
   // 更新系统信息详情
   if (metrics) {
     if (metrics.cpu) {
@@ -361,21 +362,21 @@ const updateChartData = (cpuUsage, memoryUsed, networkRate, metrics) => {
         frequency: metrics.cpu.frequency || 0
       };
     }
-    
+
     if (metrics.memory) {
       memoryInfo.value = {
         total: metrics.memory.total || 0,
         used: metrics.memory.used || 0,
         free: metrics.memory.free || 0
       };
-      
+
       // 获取系统总内存并四舍五入到最接近的整数
       const totalMemoryGB = Math.round(metrics.memory.total / (1024 * 1024 * 1024));
-      
+
       // 如果总内存发生变化或者还未设置最大值，则更新图表最大值
       if (totalMemoryGB > 0 && totalMemoryGB !== maxMemoryGB.value) {
         maxMemoryGB.value = totalMemoryGB;
-        
+
         // 更新内存图表的Y轴最大值
         if (memoryChart.value) {
           memoryChart.value.setOption({
@@ -386,7 +387,7 @@ const updateChartData = (cpuUsage, memoryUsed, networkRate, metrics) => {
         }
       }
     }
-    
+
     if (metrics.network) {
       networkInfo.value = {
         sent: metrics.network.sent || 0,
@@ -402,7 +403,7 @@ const updateChartData = (cpuUsage, memoryUsed, networkRate, metrics) => {
   if (netKB > maxNetworkKBs.value) {
     // 增加余量，让图表不会顶到头
     maxNetworkKBs.value = Math.ceil(netKB * 1.2);
-    
+
     // 如果有网络图表，更新Y轴最大值
     if (networkChart.value) {
       networkChart.value.setOption({
@@ -414,7 +415,7 @@ const updateChartData = (cpuUsage, memoryUsed, networkRate, metrics) => {
   } else if (netKB < maxNetworkKBs.value * 0.3 && maxNetworkKBs.value > 1024) {
     // 如果当前值远低于最大值，逐渐降低最大值，但不低于1MB/s
     maxNetworkKBs.value = Math.max(1024, Math.floor(maxNetworkKBs.value * 0.9));
-    
+
     if (networkChart.value) {
       networkChart.value.setOption({
         yAxis: {
@@ -469,7 +470,7 @@ const fetchPerformanceData = async () => {
   try {
     // 修复：使用更安全的electronAPI访问方式
     let metrics = null;
-    
+
     try {
       // 尝试通过window.electronAPI获取
       if (window.electronAPI && typeof window.electronAPI.getSystemMetrics === 'function') {
@@ -478,12 +479,12 @@ const fetchPerformanceData = async () => {
     } catch (electronErr) {
       console.warn('通过window.electronAPI获取性能数据失败:', electronErr);
     }
-    
+
     // 如果上面的方式失败，使用模拟数据
     if (!metrics) {
       console.log('使用模拟性能数据');
       metrics = {
-        cpu: { 
+        cpu: {
           usage: Math.random() * 30 + 20,
           percent: Math.random() * 30 + 20,
           cores: 8,
@@ -503,11 +504,11 @@ const fetchPerformanceData = async () => {
         }
       };
     }
-    
+
     // 更新图表数据
     const { cpu, memory, network } = metrics;
     updateChartData(
-      cpu?.usage || cpu?.percent || 0, 
+      cpu?.usage || cpu?.percent || 0,
       memory?.used || 0,
       network?.receivedRate || 0,
       metrics
@@ -526,10 +527,12 @@ const fetchPerformanceData = async () => {
 // 获取实例列表及统计数据
 const fetchInstances = async () => {
   try {
-    // 使用API获取实例统计数据
-    const statsData = await fetchInstanceStats();
-    stats.value.totalInstances = statsData.total || 0;
-    stats.value.runningInstances = statsData.running || 0;
+    // 修改：使用旧的API路径获取实例统计数据
+    const response = await axios.get('/api/instance-stats');
+    if (response.data) {
+      stats.value.totalInstances = response.data.total || 0;
+      stats.value.runningInstances = response.data.running || 0;
+    }
   } catch (error) {
     console.warn('获取实例统计数据失败:', error);
     // 设置模拟数据
@@ -544,7 +547,7 @@ const fetchErrorLogs = async () => {
     const response = await axios.get('/api/logs/system');
     if (response.data && response.data.logs) {
       const logs = response.data.logs;
-      stats.value.errorLogs = logs.filter(log => 
+      stats.value.errorLogs = logs.filter(log =>
         log.level === 'ERROR' || log.level === 'WARNING'
       ).length;
     }
@@ -573,25 +576,25 @@ onMounted(async () => {
     fetchSystemStatus(),
     fetchErrorLogs()
   ]);
-  
+
   calculateUsage();
-  
+
   // 初始化图表
   setTimeout(() => {
     initCharts(); // 延迟初始化，确保DOM已渲染
   }, 200);
-  
+
   // 立即获取第一次性能数据
   fetchPerformanceData();
-  
+
   // 设置定期更新
   performanceInterval = setInterval(() => {
     fetchPerformanceData();
   }, 10000); // 每10秒更新一次
-  
+
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize);
-  
+
   // 设置定期刷新实例状态
   setInterval(() => {
     fetchInstances();
@@ -617,7 +620,7 @@ onBeforeUnmount(() => {
     clearInterval(performanceInterval);
   }
   window.removeEventListener('resize', handleResize);
-  
+
   // 销毁图表实例
   cpuChart.value?.dispose();
   memoryChart.value?.dispose();
@@ -630,17 +633,17 @@ const refreshCharts = () => {
     cpuChart.value.dispose();
     cpuChart.value = null;
   }
-  
+
   if (memoryChart.value) {
     memoryChart.value.dispose();
     memoryChart.value = null;
   }
-  
+
   if (networkChart.value) {
     networkChart.value.dispose();
     networkChart.value = null;
   }
-  
+
   setTimeout(() => {
     initCharts();
   }, 100);

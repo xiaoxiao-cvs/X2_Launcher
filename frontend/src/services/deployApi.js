@@ -36,9 +36,8 @@ const deployVersion = async (version, instanceName) => {
   console.log(`部署版本 ${version}, 实例名称: ${instanceName}`);
 
   try {
-    // 使用标准格式的API路径
-    const response = await axios.post("/api/deploy", {
-      version,
+    // 使用正确的URL格式: /api/deploy/{version}
+    const response = await axios.post(`/api/deploy/${version}`, {
       instance_name: instanceName,
     });
 
@@ -46,6 +45,22 @@ const deployVersion = async (version, instanceName) => {
     return response.data;
   } catch (error) {
     console.error("部署请求失败:", error);
+
+    // 如果遇到404错误，尝试使用备用路径
+    if (error.response && error.response.status === 404) {
+      try {
+        console.log(`尝试备用路径: /deploy/${version}`);
+        const fallbackResponse = await axios.post(`/deploy/${version}`, {
+          instance_name: instanceName,
+        });
+        console.log("备用路径部署请求成功:", fallbackResponse.data);
+        return fallbackResponse.data;
+      } catch (fallbackError) {
+        console.error("备用路径部署请求失败:", fallbackError);
+        throw fallbackError;
+      }
+    }
+
     throw error;
   }
 };

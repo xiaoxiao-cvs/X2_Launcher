@@ -60,7 +60,7 @@ async def health_check():
 try:
     # 加载其他API路由
     try:
-        from routes.api import router as api_routes
+        from api.api import router as api_routes
         api_router.include_router(api_routes, prefix="")
         logger.info("已加载通用API路由")
     except ImportError as e:
@@ -73,16 +73,8 @@ try:
     except ImportError as e:
         logger.warning(f"加载WebSocket路由失败: {e}")
         
-except ImportError as e:
-    logger.error(f"加载其他路由失败: {e}", exc_info=True)
-
-# 引入部署管理路由
-try:
-    from routes.deploy_manager import router as deploy_manager_router
-    app.include_router(deploy_manager_router, prefix="/api")
-    logger.info("已将部署管理路由注册到 /api 路径")  # 修复日志信息，明确路径
-except ImportError as e:
-    logger.error(f"加载部署管理路由失败: {e}", exc_info=True)
+except ImportError as e: 
+    logger.error(f"加载路由模块时发生意外错误: {e}", exc_info=True)
 
 # 包含API路由到主应用
 app.include_router(api_router)
@@ -148,6 +140,16 @@ if __name__ == "__main__":
     # 可以通过环境变量覆盖端口和主机
     port = int(os.environ.get("X2_PORT", 5000))
     host = os.environ.get("X2_HOST", "127.0.0.1")
+    reload_enabled = os.environ.get("X2_RELOAD", "true").lower() == "true"
     
-    logger.info(f"启动服务器，监听地址: {host}:{port}")
-    uvicorn.run("main:app", host=host, port=port, reload=True)
+    # 检测是否在重载工作进程中
+    is_reload_worker = os.environ.get("PYTHONPATH") and reload_enabled
+    
+    if not is_reload_worker:
+        logger.info(f"启动服务器，监听地址: {host}:{port}")
+    
+    # 降低重载工作进程的日志级别，减少重复日志
+    if is_reload_worker:
+        logging.getLogger("x2-launcher").setLevel(logging.WARNING)
+    
+    uvicorn.run("main:app", host=host, port=port, reload=reload_enabled)

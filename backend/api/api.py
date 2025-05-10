@@ -14,9 +14,28 @@ from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+# 首先设置日志器
 logger = logging.getLogger("x2-launcher.api")
 
-router = APIRouter(tags=["api"], prefix="")  # 移除默认前缀，确保路径正确
+# 添加项目根目录到路径，确保模块导入正确
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(current_dir))
+
+# 尝试导入deploy_manager路由
+try:
+    from routes.deploy_manager import router as deploy_manager_router
+    logger.info("成功导入deploy_manager路由")
+except ImportError as e:
+    logger.error(f"无法导入deploy_manager路由: {e}")
+    # 创建一个空路由作为替代
+    deploy_manager_router = APIRouter()
+
+# 创建主路由
+router = APIRouter(tags=["api"], prefix="")
+
+# 注册deploy_manager路由，注意这里前缀为"/deploy"
+router.include_router(deploy_manager_router, prefix="/deploy", tags=["deploy"])
+logger.info(f"已注册deploy_manager路由，前缀: /deploy")
 
 # 健康检查API
 @router.get("/health")

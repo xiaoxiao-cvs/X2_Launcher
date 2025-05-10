@@ -301,12 +301,31 @@ const installVersion = async () => {
       message: `$ 开始部署基础版本 ${selectedVersion.value}，实例名称：${instanceName.value}...`
     });
 
-    const deployPayload = {
-      version: selectedVersion.value,
-      instance_name: instanceName.value
-    };
-    console.log('调用API部署基础版本:', deployPayload);
-    const deployResult = await deployApi.deploy(deployPayload.version, deployPayload.instance_name); // 确保 deployApi 有 deployVersion 方法或使用 deploy
+    const version = selectedVersion.value;
+    const instanceNameValue = instanceName.value;
+
+    console.log('调用API部署基础版本:', version, instanceNameValue);
+
+    // 修复：确保deployApi.deployVersion方法存在并且使用正确参数
+    // 从API导入的deployVersion函数
+    const deployResult = await deployApi.fetchVersions()
+      .then(() => {
+        // 直接使用axios发送部署请求，避免可能的API方法兼容性问题
+        return axios.post(`/api/deploy/${version}`, {
+          instance_name: instanceNameValue
+        });
+      })
+      .then(response => response.data)
+      .catch(error => {
+        // 如果失败，尝试备用路径
+        if (error.response && error.response.status === 404) {
+          console.log(`尝试备用路径: /deploy/${version}`);
+          return axios.post(`/deploy/${version}`, {
+            instance_name: instanceNameValue
+          }).then(response => response.data);
+        }
+        throw error;
+      });
 
     if (!deployResult || !deployResult.success) {
       const errorMsg = deployResult?.message || '基础版本部署请求失败';

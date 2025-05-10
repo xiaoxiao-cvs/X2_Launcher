@@ -8,25 +8,14 @@
           <el-tag v-if="performanceError" type="warning" size="small" effect="light" class="error-tag">
             数据异常
           </el-tag>
-          <el-button 
-            circle
-            type="primary"
-            size="small" 
-            :icon="Refresh"
-            @click="refreshPerformance"
-            :loading="isRefreshing"
-            class="refresh-btn">
+          <el-button circle type="primary" size="small" :icon="Refresh" @click="refreshPerformance"
+            :loading="isRefreshing" class="refresh-btn">
           </el-button>
         </div>
       </div>
     </template>
     <div v-if="missingPsutil" class="missing-dep-warning">
-      <el-alert
-        title="系统监控需要安装psutil模块"
-        type="warning"
-        :closable="false"
-        show-icon
-      >
+      <el-alert title="系统监控需要安装psutil模块" type="warning" :closable="false" show-icon>
         <template #default>
           <p>缺少psutil模块，系统监控数据为模拟数据</p>
           <el-button size="small" type="primary" @click="installPsutil" :loading="installing">
@@ -39,43 +28,43 @@
       <!-- CPU使用率 -->
       <div class="metric-item">
         <div class="metric-header">
-          <el-icon><Cpu /></el-icon>
+          <el-icon>
+            <Cpu />
+          </el-icon>
           <span>CPU使用率</span>
           <span class="metric-value">{{ getCpuUsage() }}%</span>
         </div>
-        <el-progress 
-          :percentage="getCpuUsage()" 
-          :color="getProgressColor(getCpuUsage())"
-          :show-text="false"
-          :stroke-width="12"/>
+        <el-progress :percentage="getCpuUsage()" :color="getProgressColor(getCpuUsage())" :show-text="false"
+          :stroke-width="12" />
         <div class="metric-details">
           <span>{{ getCpuModel() }}</span>
           <span>频率: {{ formatCpuFrequency(performance.cpu?.frequency) }}</span>
           <span>核心数: {{ performance.cpu?.cores || 0 }}</span>
         </div>
       </div>
-      
+
       <!-- 内存使用情况 -->
       <div class="metric-item">
         <div class="metric-header">
-          <el-icon><Monitor /></el-icon>
+          <el-icon>
+            <Monitor />
+          </el-icon>
           <span>内存使用</span>
           <span class="metric-value">{{ formatBytes(getMemoryUsed()) }} / {{ formatBytes(getMemoryTotal()) }}</span>
         </div>
-        <el-progress 
-          :percentage="getMemoryPercent()" 
-          :color="getProgressColor(getMemoryPercent())"
-          :show-text="false"
-          :stroke-width="12"/>
+        <el-progress :percentage="getMemoryPercent()" :color="getProgressColor(getMemoryPercent())" :show-text="false"
+          :stroke-width="12" />
         <div class="metric-details">
           <span>可用: {{ formatBytes(getMemoryFree()) }}</span>
         </div>
       </div>
-      
+
       <!-- 网络活动 -->
       <div class="metric-item">
         <div class="metric-header">
-          <el-icon><Connection /></el-icon>
+          <el-icon>
+            <Connection />
+          </el-icon>
           <span>网络活动</span>
         </div>
         <div class="network-stats">
@@ -188,39 +177,49 @@ const formatCpuFrequency = (frequency) => {
 // 刷新性能数据
 const refreshPerformance = async () => {
   if (isRefreshing.value) return;
-  
+
   isRefreshing.value = true;
   performanceError.value = null;
-  
+
   try {
     // 在开始加载之前先显示初始化数据，避免空白状态
     if (!performance.value.cpu?.cores) {
       performance.value = getFallbackMetrics();
     }
-    
+
     console.log('正在请求系统性能数据...');
-    
-    // 修复: 安全地访问electronAPI
+
+    // 修复: 安全地访问electronAPI，避免递归调用
     let result;
-    if (window.electronAPI) {
-      // 请求详细版系统信息
-      result = await window.electronAPI.getSystemMetrics(true).catch(err => {
+
+    // 检查是否有全局electronAPI且不是模拟版本
+    if (window.electronAPI && window.electronAPI !== window._electronAPI) {
+      try {
+        // 请求详细版系统信息
+        result = await window.electronAPI.getSystemMetrics(true);
+      } catch (err) {
         console.error('IPC调用异常:', err);
         throw new Error(`IPC错误: ${err.message || '未知错误'}`);
-      });
-    } else if (electronAPI) {
-      // 请求详细版系统信息
-      result = await electronAPI.getSystemMetrics(true).catch(err => {
+      }
+    }
+    // 检查注入的electronAPI
+    else if (electronAPI && electronAPI !== window._electronAPI) {
+      try {
+        // 请求详细版系统信息
+        result = await electronAPI.getSystemMetrics(true);
+      } catch (err) {
         throw new Error(`API错误: ${err.message || '未知错误'}`);
-      });
-    } else {
-      // 如果没有API可用，使用备用数据
+      }
+    }
+    // 使用备用数据
+    else {
+      // 使用备用数据
       result = getFallbackMetrics();
       console.log('没有可用的electronAPI, 使用备用数据');
     }
-    
+
     console.log('接收到性能数据:', result);
-    
+
     if (result?.error) {
       throw new Error(result.message || '获取性能数据失败');
     }
@@ -232,7 +231,7 @@ const refreshPerformance = async () => {
     } else {
       missingPsutil.value = false;
     }
-    
+
     // 计算网络速率
     if (performance.value.network?.sent && result.network) {
       const timeGap = 5; // 假设间隔为5秒
@@ -245,13 +244,13 @@ const refreshPerformance = async () => {
     }
 
     performance.value = result;
-    
+
     // 添加强制渲染延迟，确保布局稳定
     setTimeout(() => {
       // 触发窗口的resize事件，让图表重新计算尺寸
       window.dispatchEvent(new Event('resize'));
     }, 300);
-    
+
   } catch (err) {
     console.error('性能获取错误:', err);
     performanceError.value = err;
@@ -270,25 +269,25 @@ const refreshPerformance = async () => {
 
 // 添加获取回退指标的函数 - 更详细的模拟数据
 const getFallbackMetrics = () => ({
-  cpu: { 
-    usage: 25, 
-    percent: 25, 
-    cores: 8, 
-    frequency: 3200, 
-    model: 'Intel Core i7-10700K' 
+  cpu: {
+    usage: 25,
+    percent: 25,
+    cores: 8,
+    frequency: 3200,
+    model: 'Intel Core i7-10700K'
   },
-  memory: { 
+  memory: {
     total: 16 * 1024 * 1024 * 1024,
     used: 8 * 1024 * 1024 * 1024,
     free: 8 * 1024 * 1024 * 1024,
     usage: 50,
     percent: 50
   },
-  network: { 
-    sent: 0, 
-    received: 0, 
-    sentRate: 0, 
-    receivedRate: 0 
+  network: {
+    sent: 0,
+    received: 0,
+    sentRate: 0,
+    receivedRate: 0
   }
 })
 
@@ -296,7 +295,7 @@ const getFallbackMetrics = () => ({
 const getProgressColor = (percentage) => {
   // 获取当前主题色
   const themeColor = window.currentThemeColor || '#4a7eff';
-  
+
   if (percentage < 60) return themeColor;  // 使用主题色
   if (percentage < 80) return '#E6A23C';  // 黄色
   return '#F56C6C';  // 红色
@@ -308,7 +307,7 @@ const installPsutil = async () => {
     const response = await axios.post('/api/install-dependencies', {
       packages: ['psutil']
     });
-    
+
     if (response.data && response.data.success) {
       ElMessage.success('psutil安装成功，系统监控将在下次刷新时启用');
       // 安装成功后立即刷新以获取真实数据
@@ -332,13 +331,13 @@ onMounted(() => {
   if (!window.electronAPI && electronAPI) {
     window.electronAPI = electronAPI;
   }
-  
+
   // 立即刷新一次性能数据
   refreshPerformance();
-  
+
   // 设置定时刷新
   refreshInterval = setInterval(refreshPerformance, 5000);
-  
+
   // 添加窗口尺寸变化监听器，确保图表尺寸正确
   window.addEventListener('resize', debounce(() => {
     console.log('窗口大小变化，更新性能图表');
@@ -350,7 +349,7 @@ onMounted(() => {
 // 添加防抖函数，避免频繁触发resize事件
 function debounce(func, wait) {
   let timeout;
-  return function() {
+  return function () {
     const context = this;
     const args = arguments;
     clearTimeout(timeout);

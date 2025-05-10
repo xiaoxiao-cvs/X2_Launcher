@@ -103,9 +103,11 @@ const createPerformanceAPI = () => {
     getSystemMetrics: async () => {
       try {
         // 如果实际的electronAPI可用，使用它
+        // 修复递归调用问题：确保我们不是在引用自己创建的electronAPI
         if (
           window.electronAPI &&
-          typeof window.electronAPI.getSystemMetrics === "function"
+          typeof window.electronAPI.getSystemMetrics === "function" &&
+          window.electronAPI !== window._electronAPI // 防止自引用
         ) {
           return await window.electronAPI.getSystemMetrics();
         }
@@ -321,8 +323,14 @@ const initApp = () => {
   // 如果没有原生electronAPI，提供模拟版本
   if (!window.electronAPI) {
     try {
+      // 修复：先创建API实例，再定义属性
+      const performanceAPIInstance = createPerformanceAPI();
+
+      // 保存一个引用到全局变量，以便检测自引用
+      window._electronAPI = performanceAPIInstance;
+
       Object.defineProperty(window, "electronAPI", {
-        value: performanceAPI,
+        value: performanceAPIInstance,
         writable: false,
         configurable: true,
       });
@@ -330,7 +338,7 @@ const initApp = () => {
     } catch (e) {
       console.warn("无法定义 electronAPI:", e);
       // 备用方案
-      window._electronAPI = performanceAPI;
+      window._electronAPI = createPerformanceAPI();
     }
   }
 
