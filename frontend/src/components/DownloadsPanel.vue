@@ -14,32 +14,22 @@
 
     <!-- 日志显示组件 -->
     <LogsDisplay :logs="allLogs" @clear-logs="clearLogs" />
-    
+
     <!-- 实例列表组件 -->
-    <InstancesList 
-      :instances="instanceList" 
-      @toggle-instance="toggleInstance"
-      @refresh-instances="refreshInstances"
-    />
-    
+    <InstancesList :instances="instanceList" @toggle-instance="toggleInstance" @refresh-instances="refreshInstances" />
+
     <!-- 控制台对话框组件 -->
-    <ConsoleDialog
-      v-model:visible="consoleVisible"
-      :instanceId="runningInstanceId"
-      :instanceName="runningInstanceName"
-      :logs="instanceLogs"
-      :isRunning="!!runningInstanceId"
-      @close="closeConsole"
-      @stop="handleInstanceStopped"
-      @refresh="refreshDownloads"
-    />
+    <ConsoleDialog v-model:visible="consoleVisible" :instanceId="runningInstanceId" :instanceName="runningInstanceName"
+      :logs="instanceLogs" :isRunning="!!runningInstanceId" @close="closeConsole" @stop="handleInstanceStopped"
+      @refresh="refreshDownloads" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, inject, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
-import axios from 'axios';
+// 导入统一的API服务
+import { instancesApi, deployApi } from '@/services/api';
 import { WebSocketService } from '../services/websocket';
 
 import InstallConfig from './downloads/InstallConfig.vue';
@@ -83,7 +73,7 @@ const refreshDownloads = async () => {
   loading.value = true;
   try {
     console.log('刷新实例列表...');
-    const response = await axios.get('/api/instances');
+    const response = await instancesApi.getInstances();
     if (response.data && response.data.instances) {
       // API返回的格式可能不是我们想要的，转换一个通用格式
       installHistory.value = response.data.instances.map(instance => ({
@@ -111,11 +101,11 @@ const toggleInstance = async (instance) => {
   try {
     if (instance.status === 'running') {
       // 停止实例
-      const response = await axios.post('/api/stop');
+      const response = await instancesApi.stopInstance();
       if (response.data && response.data.success) {
         ElMessage.success(`${instance.name} 已停止`);
         instance.status = 'stopped';
-        
+
         // 如果有正在查看的终端，关闭他
         if (runningInstanceId.value === instance.id) {
           closeConsole();
@@ -125,21 +115,21 @@ const toggleInstance = async (instance) => {
       }
     } else {
       // 启动实例
-      const response = await axios.post(`/api/start/${instance.id}`);
+      const response = await instancesApi.startInstance(instance.id);
       if (response.data && response.data.success) {
         ElMessage.success(`${instance.name} 已启动`);
         instance.status = 'running';
-        
+
         // 显示控制台
         showConsole(instance);
       } else {
         ElMessage.error('启动实例失败');
       }
     }
-    
+
     // 刷新实例以获取最新的实例状态，以便用户定位问题
     setTimeout(refreshDownloads, 1000);
-    
+
   } catch (error) {
     console.error('控制实例失败:', error);
     ElMessage.error('控制实例失败: ' + (error.response?.data?.message || error.message));
@@ -155,7 +145,7 @@ const showConsole = (instance) => {
     message: `正在启动 ${instance.name}...`
   }];
   consoleVisible.value = true;
-  
+
   // 启动日志轮询
   startLogPolling();
 };
@@ -183,7 +173,7 @@ const startLogPolling = () => {
   if (logPollingInterval) {
     clearInterval(logPollingInterval);
   }
-  
+
   fetchInstanceLogs();
   logPollingInterval = setInterval(fetchInstanceLogs, 2000);
 };
@@ -199,9 +189,9 @@ const stopLogPolling = () => {
 // 获取实例日志
 const fetchInstanceLogs = async () => {
   if (!runningInstanceId.value) return;
-  
+
   try {
-    const response = await axios.get(`/api/logs/instance/${runningInstanceId.value}`);
+    const response = await instancesApi.getLogs(runningInstanceId.value);
     if (response.data && response.data.logs) {
       // 更新日志，保持最多显示1000条
       const newLogs = response.data.logs;
@@ -220,12 +210,12 @@ const setupWebSocket = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window.location.host;
   const wsUrl = `${protocol}//${host}/api/logs/ws`;
-  
+
   // 如果已经有连接，先关闭
   if (wsConnection && wsConnection.readyState !== WebSocket.CLOSED) {
     wsConnection.close();
   }
-  
+
   try {
     // 使用WebSocketService代替原生WebSocket
     wsConnection = new WebSocketService({
@@ -234,7 +224,7 @@ const setupWebSocket = () => {
       maxReconnectAttempts: 5,
       autoReconnect: true
     });
-    
+
     wsConnection.on('open', () => {
       console.log('WebSocket连接已建立');
       addLog({
@@ -243,7 +233,7 @@ const setupWebSocket = () => {
         level: 'INFO',
         message: 'WebSocket日志连接已建立'
       });
-      
+
       // 连接成功后显示指令提示
       addLog({
         time: formatTime(new Date()),
@@ -252,15 +242,15 @@ const setupWebSocket = () => {
         message: '$ 开始安装过程，请等待...'
       });
     });
-    
+
     wsConnection.on('message', (data) => {
       try {
         const logData = typeof data === 'string' ? JSON.parse(data) : data;
-        
+
         // 美化日志消息，去除多余的空格和换行
         if (logData.message && typeof logData.message === 'string') {
           logData.message = logData.message.replace(/\s+$/, '');
-          
+
           // 如果是pip安装日志，美化格式
           if (logData.message.includes('Successfully installed') && !logData.source) {
             logData.source = 'pip';
@@ -271,14 +261,14 @@ const setupWebSocket = () => {
             logData.source = 'pip';
             logData.level = 'ERROR';
           }
-          
+
           // 识别python错误
           if (logData.message.includes('.py') && logData.message.includes('Error:') && !logData.source) {
             logData.source = 'python';
             logData.level = 'ERROR';
           }
         }
-        
+
         // 将日志添加到全局日志列表
         addLog({
           time: logData.time || formatTime(new Date()),
@@ -286,15 +276,15 @@ const setupWebSocket = () => {
           level: logData.level || 'INFO',
           message: logData.message || '未知消息'
         });
-        
+
         // 使用新的日志解析工具来判断安装状态
         const isCompleted = isInstallationComplete(logData);
         const isError = isInstallationError(logData);
-        
+
         // 如果是完成消息
         if (isCompleted) {
           console.log('检测到安装完成消息:', logData.message);
-          
+
           // 添加命令行样式的完成提示
           addLog({
             time: formatTime(new Date()),
@@ -302,12 +292,12 @@ const setupWebSocket = () => {
             level: 'SUCCESS',
             message: '$ 安装过程已完成!'
           });
-          
+
           // 稍后刷新列表
           setTimeout(() => {
             refreshDownloads();
             refreshInstances();
-            
+
             // 成功通知
             ElMessage.success({
               message: '安装已完成，请在实例管理中查看',
@@ -315,11 +305,11 @@ const setupWebSocket = () => {
             });
           }, 1000);
         }
-        
+
         // 如果是错误消息
         if (isError) {
           console.log('检测到安装错误消息:', logData.message);
-          
+
           // 添加命令行样式的错误提示
           addLog({
             time: formatTime(new Date()),
@@ -327,14 +317,14 @@ const setupWebSocket = () => {
             level: 'ERROR',
             message: '$ 安装过程中发生错误，请检查上方日志!'
           });
-          
+
           // 仍然刷新列表，因为可能部分安装成功
           setTimeout(() => {
             refreshDownloads();
             refreshInstances();
           }, 1000);
         }
-        
+
         // 处理依赖安装消息
         if (logData.message && logData.message.includes('依赖安装成功')) {
           addLog({
@@ -344,7 +334,7 @@ const setupWebSocket = () => {
             message: '$ 依赖安装已完成，正在执行后续配置...'
           });
         }
-        
+
         // 处理"安装完成"类消息，添加更清晰的结束提示
         if (logData.message && logData.message.includes('安装完成！请运行启动脚本')) {
           addLog({
@@ -358,7 +348,7 @@ const setupWebSocket = () => {
         console.error('处理WebSocket消息失败:', error);
       }
     });
-    
+
     wsConnection.on('error', (error) => {
       console.error('WebSocket错误:', error);
       addLog({
@@ -368,7 +358,7 @@ const setupWebSocket = () => {
         message: 'WebSocket连接错误'
       });
     });
-    
+
     wsConnection.on('close', () => {
       console.log('WebSocket连接已关闭');
       addLog({
@@ -378,7 +368,7 @@ const setupWebSocket = () => {
         message: 'WebSocket连接已关闭，正在重连...'
       });
     });
-    
+
     wsConnection.connect();
   } catch (error) {
     console.error('创建WebSocket连接失败:', error);
@@ -396,7 +386,7 @@ const setupWebSocket = () => {
 // 添加日志
 const addLog = (log) => {
   allLogs.value.push(log);
-  
+
   // 限制日志条数
   if (allLogs.value.length > 1000) {
     allLogs.value = allLogs.value.slice(-900);
@@ -418,9 +408,9 @@ const refreshInstances = () => {
 
 // 格式化时间展示
 function formatTime(date) {
-  return date.toLocaleString('zh-CN', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
+  return date.toLocaleString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
     second: '2-digit'
   });
 }
@@ -438,7 +428,7 @@ const startDownload = async () => {
     level: 'INFO',
     message: `开始下载 MaiBot ${config.value.version}`
   });
-  
+
   try {
     const response = await axios.post('/api/download', {
       name: config.value.name,
@@ -462,7 +452,7 @@ onMounted(() => {
     refreshDownloads();
     setupWebSocket();
   }, 1000);
-  
+
   // 监听实例列表更新事件
   if (emitter) {
     emitter.on('refresh-instances', refreshDownloads);
@@ -474,9 +464,9 @@ onBeforeUnmount(() => {
   if (wsConnection) {
     wsConnection.disconnect();
   }
-  
+
   stopLogPolling();
-  
+
   // 移除事件监听
   if (emitter) {
     emitter.off('refresh-instances', refreshDownloads);

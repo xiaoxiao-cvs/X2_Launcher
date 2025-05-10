@@ -1,256 +1,273 @@
+# -*- coding: utf-8 -*-
+"""
+MaiBot 下载器
+"""
 import os
 import sys
-import subprocess
+import time
 import logging
-import shutil
+import subprocess
+import platform
 from pathlib import Path
-import json
-import requests
-from typing import Dict, List, Optional, Union, Tuple
+from datetime import datetime
 
-# 配置日志
+# 设置日志
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
+    format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s'
 )
-logger = logging.getLogger("MaiBot-Downloader")
+
+logger = logging.getLogger("bot-downloader")
 
 class BotDownloader:
-    """MaiBot下载器，负责获取必要的repo和依赖"""
+    """MaiBot 下载器类"""
     
-    def __init__(self, base_dir: str = None):
-        """初始化下载器
-        
-        Args:
-            base_dir: 基础安装目录，若不指定则使用系统临时目录
-        """
-        self.base_dir = base_dir or os.path.join(os.path.expanduser("~"), "MaiM-with-u")
-        self.maibot_repo = "https://github.com/MaiM-with-u/MaiBot.git"
-        self.adapter_repo = "https://github.com/MaiM-with-u/MaiBot-Napcat-Adapter.git"
-        self.maibot_dir = os.path.join(self.base_dir, "MaiBot")
-        self.adapter_dir = os.path.join(self.base_dir, "MaiBot-Napcat-Adapter")
-        self.python_path = sys.executable
-        self.venv_dir = os.path.join(self.maibot_dir, "venv")
-        self.venv_python = os.path.join(self.venv_dir, "Scripts", "python.exe")
-        self.venv_pip = os.path.join(self.venv_dir, "Scripts", "pip.exe")
+    def __init__(self, project_root=None):
+        """初始化下载器"""
+        self.base_dir = os.path.join(os.getcwd() if project_root is None else project_root, "MaiM-with-u")
         
         # 确保基础目录存在
         os.makedirs(self.base_dir, exist_ok=True)
-    
-    def check_git_installed(self) -> bool:
-        """检查Git是否已安装"""
-        try:
-            subprocess.run(["git", "--version"], check=True, capture_output=True)
-            return True
-        except (subprocess.SubprocessError, FileNotFoundError):
-            logger.error("Git未安装或不在PATH中，请先安装Git")
-            return False
-    
-    def check_python_version(self) -> bool:
-        """检查Python版本是否符合要求（>= 3.10）"""
-        try:
-            version_info = sys.version_info
-            if version_info.major >= 3 and version_info.minor >= 10:
-                logger.info(f"Python版本 {version_info.major}.{version_info.minor} 符合要求")
-                return True
-            else:
-                logger.error(f"Python版本 {version_info.major}.{version_info.minor} 不符合要求，需要 >= 3.10")
-                return False
-        except Exception as e:
-            logger.error(f"检查Python版本时出错：{e}")
-            return False
-    
-    def clone_repos(self) -> Tuple[bool, bool]:
-        """克隆MaiBot和Adapter仓库
         
-        Returns:
-            Tuple[bool, bool]: (成功克隆MaiBot, 成功克隆Adapter)
-        """
-        if not self.check_git_installed():
-            return False, False
+        # 系统信息
+        self.is_windows = platform.system() == "Windows"
+        logger.info(f"初始化下载器，基础目录: {self.base_dir}")
         
-        maibot_success = self._clone_repo(self.maibot_repo, "MaiBot", self.maibot_dir)
-        adapter_success = self._clone_repo(self.adapter_repo, "MaiBot-Napcat-Adapter", self.adapter_dir)
-        
-        return maibot_success, adapter_success
-    
-    def _clone_repo(self, repo_url: str, repo_name: str, target_dir: str) -> bool:
-        """克隆指定的代码库
+    def download(self, instance_name, version="latest"):
+        """下载指定版本的MaiBot并安装基础依赖
         
         Args:
-            repo_url: 仓库URL
-            repo_name: 仓库名称（用于日志）
-            target_dir: 克隆到的目标目录
-        
-        Returns:
-            bool: 是否成功克隆
-        """
-        if os.path.exists(target_dir):
-            logger.info(f"{repo_name}目录已存在，尝试拉取最新更改")
-            try:
-                subprocess.run(["git", "-C", target_dir, "pull"], check=True)
-                logger.info(f"{repo_name}更新成功")
-                return True
-            except subprocess.SubprocessError as e:
-                logger.error(f"更新{repo_name}失败：{e}")
-                return False
-        
-        logger.info(f"克隆{repo_name}到{target_dir}")
-        try:
-            subprocess.run(["git", "clone", repo_url, target_dir], check=True)
-            logger.info(f"{repo_name}克隆成功")
-            return True
-        except subprocess.SubprocessError as e:
-            logger.error(f"克隆{repo_name}失败：{e}")
-            return False
-    
-    def create_venv(self) -> bool:
-        """创建Python虚拟环境
-        
-        Returns:
-            bool: 是否成功创建虚拟环境
-        """
-        if not self.check_python_version():
-            return False
-        
-        if os.path.exists(self.venv_dir):
-            logger.info(f"虚拟环境已存在于 {self.venv_dir}")
-            return True
-        
-        logger.info(f"在{self.venv_dir}创建Python虚拟环境")
-        try:
-            subprocess.run([sys.executable, "-m", "venv", self.venv_dir], check=True)
-            logger.info(f"虚拟环境创建成功")
-            return True
-        except subprocess.SubprocessError as e:
-            logger.error(f"创建虚拟环境失败：{e}")
-            return False
-    
-    def install_dependencies(self) -> Tuple[bool, bool]:
-        """安装MaiBot和Adapter的依赖
-        
-        Returns:
-            Tuple[bool, bool]: (MaiBot依赖安装成功, Adapter依赖安装成功)
-        """
-        if not os.path.exists(self.venv_python):
-            logger.error(f"虚拟环境不存在，请先创建虚拟环境")
-            return False, False
-        
-        # 安装MaiBot依赖
-        maibot_req_file = os.path.join(self.maibot_dir, "requirements.txt")
-        if not os.path.exists(maibot_req_file):
-            logger.error(f"MaiBot的requirements.txt不存在")
-            return False, False
-        
-        logger.info("安装MaiBot依赖...")
-        maibot_success = self._install_requirements(maibot_req_file)
-        
-        # 安装Adapter依赖
-        adapter_req_file = os.path.join(self.adapter_dir, "requirements.txt")
-        if not os.path.exists(adapter_req_file):
-            logger.error(f"Adapter的requirements.txt不存在")
-            return maibot_success, False
-        
-        logger.info("安装Adapter依赖...")
-        adapter_success = self._install_requirements(adapter_req_file)
-        
-        return maibot_success, adapter_success
-    
-    def _install_requirements(self, req_file: str) -> bool:
-        """安装指定的依赖文件
-        
-        Args:
-            req_file: requirements.txt的路径
-        
-        Returns:
-            bool: 是否安装成功
-        """
-        try:
-            subprocess.run([
-                self.venv_pip, "install", 
-                "-i", "https://mirrors.aliyun.com/pypi/simple", 
-                "-r", req_file, "--upgrade"
-            ], check=True)
-            logger.info(f"依赖安装成功: {req_file}")
-            return True
-        except subprocess.SubprocessError as e:
-            logger.error(f"安装依赖失败：{e}")
-            return False
-    
-    def download(self, instance_name: str = None) -> dict:
-        """执行完整的下载流程
-        
-        Args:
-            instance_name: 实例名称，用于配置
-        
-        Returns:
-            dict: 下载结果，包含状态和路径
-        """
-        if instance_name:
-            # 使用实例名创建特定文件夹
-            self.base_dir = os.path.join(os.path.expanduser("~"), "MaiM-with-u", instance_name)
-            self.maibot_dir = os.path.join(self.base_dir, "MaiBot")
-            self.adapter_dir = os.path.join(self.base_dir, "MaiBot-Napcat-Adapter")
-            self.venv_dir = os.path.join(self.maibot_dir, "venv")
-            self.venv_python = os.path.join(self.venv_dir, "Scripts", "python.exe")
-            self.venv_pip = os.path.join(self.venv_dir, "Scripts", "pip.exe")
+            instance_name: 实例名称
+            version: 版本号，默认为latest
             
-            # 确保目录存在
-            os.makedirs(self.base_dir, exist_ok=True)
+        Returns:
+            Dict: 下载结果
+        """
+        logger.info(f"开始基础下载 MaiBot {version} 到实例 {instance_name}")
+        print(f"【下载器】开始基础下载 MaiBot {version} 到实例 {instance_name}")
         
-        logger.info(f"开始下载MaiBot到 {self.base_dir}")
+        instance_path = os.path.join(self.base_dir, instance_name)
+        os.makedirs(instance_path, exist_ok=True)
         
-        # 克隆仓库
-        maibot_cloned, adapter_cloned = self.clone_repos()
-        if not (maibot_cloned and adapter_cloned):
-            return {
-                "success": False,
-                "message": "克隆仓库失败，请检查网络和Git配置",
-                "base_dir": self.base_dir
+        if os.path.exists(os.path.join(instance_path, "MaiBot")):
+            logger.info(f"实例的MaiBot目录已存在，执行清理: {instance_path}")
+            print(f"【下载器】实例的MaiBot目录已存在，执行清理: {instance_path}")
+            try:
+                self._clean_instance(instance_path) # _clean_instance 只清理MaiBot子目录
+            except Exception as e:
+                logger.error(f"清理实例失败: {e}")
+                print(f"【下载器】错误: 清理实例失败: {e}")
+                return {"success": False, "message": f"清理实例失败: {e}"}
+        
+        try:
+            logger.info(f"开始从GitHub克隆 MaiBot {version}")
+            print(f"【下载器】开始从GitHub克隆 MaiBot {version}")
+            
+            git_url = "https://github.com/MaiM-with-u/MaiBot.git"
+            # 克隆到 instance_path 下的 MaiBot 子目录
+            maibot_target_path = os.path.join(instance_path, "MaiBot") 
+            git_cmd = ["git", "clone", git_url, maibot_target_path, "--branch", version, "--single-branch", "--depth", "1"]
+            
+            if version.lower() in ["latest", "main"]:
+                git_cmd = ["git", "clone", git_url, maibot_target_path, "--depth", "1"]
+                
+            logger.info(f"执行命令: {' '.join(git_cmd)}")
+            print(f"【下载器】执行命令: {' '.join(git_cmd)}")
+            
+            process = subprocess.Popen(
+                git_cmd,
+                # cwd=instance_path, # Git clone target path is absolute
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding='utf-8', errors='replace'
+            )
+            
+            for line in process.stdout:
+                line = line.strip()
+                if line:
+                    logger.info(f"Git: {line}")
+                    print(f"【Git】{line}")
+            process.wait()
+            
+            if process.returncode != 0:
+                error_msg = f"Git克隆失败, 返回码: {process.returncode}"
+                logger.error(error_msg)
+                print(f"【下载器】错误: {error_msg}")
+                return {"success": False, "message": error_msg}
+                
+            if not os.path.exists(maibot_target_path) or not os.path.exists(os.path.join(maibot_target_path, "requirements.txt")):
+                error_msg = "Git克隆后MaiBot目录或requirements.txt不存在"
+                logger.error(error_msg)
+                print(f"【下载器】错误: {error_msg}")
+                return {"success": False, "message": error_msg}
+                
+            logger.info("Git克隆成功")
+            print(f"【下载器】Git克隆成功")
+            
+            logger.info("开始安装基础依赖")
+            print(f"【下载器】开始安装基础依赖")
+            
+            # 虚拟环境创建在 instance_path/venv
+            venv_path = os.path.join(instance_path, "venv")
+            python_exec = sys.executable # 使用当前运行的python解释器创建venv
+            
+            venv_cmd = [python_exec, "-m", "venv", venv_path]
+            logger.info(f"创建虚拟环境: {' '.join(venv_cmd)}")
+            print(f"【下载器】创建虚拟环境: {' '.join(venv_cmd)}")
+            
+            process = subprocess.Popen(
+                venv_cmd,
+                # cwd=instance_path, # venv_path is absolute
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding='utf-8', errors='replace'
+            )
+            for line in process.stdout:
+                line = line.strip(); print(f"【venv】{line}") if line else None
+            process.wait()
+            
+            if process.returncode != 0 or not os.path.exists(venv_path):
+                error_msg = f"创建虚拟环境失败, 返回码: {process.returncode}"
+                logger.error(error_msg)
+                print(f"【下载器】错误: {error_msg}")
+                return {"success": False, "message": error_msg}
+            
+            pip_exec = os.path.join(venv_path, "Scripts" if platform.system() == "Windows" else "bin", "pip")
+            requirements_file = os.path.join(maibot_target_path, "requirements.txt")
+            install_cmd = [pip_exec, "install", "-r", requirements_file, "--upgrade", "pip"] #升级pip
+            
+            logger.info(f"安装依赖: {' '.join(install_cmd)}")
+            print(f"【下载器】安装依赖: {' '.join(install_cmd)}")
+            
+            process = subprocess.Popen(
+                install_cmd,
+                # cwd=maibot_target_path, # requirements_file is absolute
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding='utf-8', errors='replace'
+            )
+            for line in process.stdout:
+                line = line.strip(); print(f"【pip】{line}") if line else None
+            process.wait()
+
+            if process.returncode != 0:
+                error_msg = f"依赖安装失败, 返回码: {process.returncode}"
+                logger.error(error_msg)
+                print(f"【下载器】错误: {error_msg}")
+                # 不直接返回失败，有些依赖失败可能是可选的，但记录错误
+                # return {"success": False, "message": error_msg }
+
+            # 基础下载只创建MaiBot核心的启动脚本，适配器等由configurator处理
+            self._create_maibot_core_scripts(instance_path, instance_name, maibot_target_path, venv_path)
+            
+            result = {
+                "success": True,
+                "message": f"MaiBot {version} 基础下载和依赖安装完成",
+                "instance_name": instance_name,
+                "base_dir": instance_path, # instance_path 是 MaiM-with-u/{instance_name}
+                "maibot_dir": maibot_target_path, # maibot_target_path 是 MaiM-with-u/{instance_name}/MaiBot
+                "venv_dir": venv_path,
+                "timestamp": datetime.now().isoformat()
             }
+            
+            logger.info(f"MaiBot基础下载和安装成功: {instance_path}")
+            print(f"【下载器】MaiBot基础下载和安装成功: {instance_path}")
+            return result
+            
+        except Exception as e:
+            error_msg = f"下载MaiBot核心出错: {str(e)}"
+            logger.exception(error_msg)
+            print(f"【下载器】严重错误: {error_msg}")
+            return {"success": False, "message": error_msg}
+    
+    def _clean_instance(self, instance_path):
+        """清理实例目录中的MaiBot子目录，保留venv等其他文件"""
+        maibot_dir = os.path.join(instance_path, "MaiBot")
+        if os.path.exists(maibot_dir):
+            import shutil
+            logger.info(f"删除已存在的MaiBot子目录: {maibot_dir}")
+            print(f"【下载器】删除已存在的MaiBot子目录: {maibot_dir}")
+            shutil.rmtree(maibot_dir, ignore_errors=True)
+    
+    def _create_maibot_core_scripts(self, instance_path, instance_name, maibot_program_dir, venv_path):
+        """仅创建MaiBot核心的启动脚本"""
+        logger.info(f"为实例 {instance_name} 创建MaiBot核心启动脚本")
+        print(f"【下载器】为实例 {instance_name} 创建MaiBot核心启动脚本")
         
-        # 创建虚拟环境
-        venv_created = self.create_venv()
-        if not venv_created:
-            return {
-                "success": False,
-                "message": "创建虚拟环境失败，请确保Python版本>=3.10",
-                "base_dir": self.base_dir
-            }
+        python_in_venv = os.path.join(venv_path, "Scripts" if platform.system() == "Windows" else "bin", "python")
+        activate_script = os.path.join(venv_path, "Scripts" if platform.system() == "Windows" else "bin", "activate")
         
-        # 安装依赖
-        maibot_deps, adapter_deps = self.install_dependencies()
-        if not (maibot_deps and adapter_deps):
-            return {
-                "success": False,
-                "message": "安装依赖失败，可能存在网络问题或依赖冲突",
-                "base_dir": self.base_dir,
-                "maibot_deps_installed": maibot_deps,
-                "adapter_deps_installed": adapter_deps
-            }
-        
-        # 下载完成，返回成功信息
-        return {
-            "success": True,
-            "message": "MaiBot下载和依赖安装完成",
-            "base_dir": self.base_dir,
-            "maibot_dir": self.maibot_dir,
-            "adapter_dir": self.adapter_dir,
-            "venv_dir": self.venv_dir,
-            "instance_name": instance_name or "default"
-        }
+        # Windows
+        if platform.system() == "Windows":
+            bat_path = os.path.join(instance_path, f"启动MaiBot核心_{instance_name}.bat")
+            with open(bat_path, "w", encoding="utf-8") as f:
+                f.write(f"""@echo off
+title MaiBot Core - {instance_name}
+echo 正在激活虚拟环境: {venv_path}
+call "{activate_script}"
+echo 切换到MaiBot目录: {maibot_program_dir}
+cd /d "{maibot_program_dir}"
+echo 正在启动MaiBot核心 (app.py)...
+"{python_in_venv}" app.py
+pause
+""")
+            logger.info(f"已创建Windows MaiBot核心启动脚本: {bat_path}")
+        else: # Linux/macOS
+            sh_path = os.path.join(instance_path, f"start_maibot_core_{instance_name}.sh")
+            with open(sh_path, "w", encoding="utf-8") as f:
+                f.write(f"""#!/bin/bash
+echo "正在激活虚拟环境: {venv_path}"
+source "{activate_script}"
+echo "切换到MaiBot目录: {maibot_program_dir}"
+cd "{maibot_program_dir}"
+echo "正在启动MaiBot核心 (app.py)..."
+"{python_in_venv}" app.py
+""")
+            os.chmod(sh_path, 0o755)
+            logger.info(f"已创建Linux/macOS MaiBot核心启动脚本: {sh_path}")
 
 if __name__ == "__main__":
-    # 命令行测试用
     import argparse
+    import json # Add missing import
     parser = argparse.ArgumentParser(description="MaiBot下载工具")
-    parser.add_argument("--dir", help="安装目录")
-    parser.add_argument("--instance", help="实例名称")
+    parser.add_argument("--dir", help="项目根目录")
+    parser.add_argument("--instance", help="实例名称", default=None)
+    parser.add_argument("--version", help="MaiBot版本", default="latest")
+    parser.add_argument("--debug", action="store_true", help="启用调试模式")
     args = parser.parse_args()
     
-    downloader = BotDownloader(args.dir)
-    result = downloader.download(args.instance)
-    print(json.dumps(result, indent=2))
+    # 启用调试日志
+    if args.debug:
+        logging.getLogger("MaiBot-Downloader").setLevel(logging.DEBUG)
+        # 添加文件处理器以记录详细日志
+        log_file = os.path.join(os.getcwd(), "maibot_downloader_debug.log")
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        logging.getLogger("MaiBot-Downloader").addHandler(file_handler)
+        logger.info(f"调试日志将保存至: {log_file}")
+    
+    # 获取绝对路径
+    project_root = os.path.abspath(args.dir) if args.dir else os.path.abspath(os.getcwd())
+    logger.info(f"使用项目根目录: {project_root}")
+    
+    downloader = BotDownloader(project_root)
+    
+    # 执行下载并实时打印状态
+    result = downloader.download(args.instance, args.version)
+    
+    # 打印最终结果
+    if result["success"]:
+        print(f"\n✓ 成功: {result['message']}")
+        print(f"- 实例根目录: {result.get('base_dir')}")
+        print(f"- MaiBot程序目录: {result.get('maibot_dir')}") # Corrected key
+        # print(f"- 适配器目录: {result.get('adapter_dir')}") # adapter_dir is not part of base download
+        print(f"- 虚拟环境: {result.get('venv_dir')}")
+    else:
+        print(f"\n× 失败: {result['message']}")
+    
+    # 输出JSON结果供其他程序使用
+    print("\nJSON结果:")
+    print(json.dumps(result, indent=2, ensure_ascii=False))

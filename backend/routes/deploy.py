@@ -7,14 +7,20 @@ import sys
 import time
 import logging
 import asyncio
+import subprocess
 from typing import List, Dict, Any
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Depends, Body
+
+# 导入自定义模块
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from scripts.downloader import BotDownloader
+from scripts.configurator import BotConfigurator
 
 logger = logging.getLogger("x2-launcher.deploy")
 
-# 使用空字符串作为标签，移除前缀，确保能匹配多种路径模式
+# 使用标准路由配置，不设置前缀，由主应用处理
 router = APIRouter(tags=["deploy"])
 
 # 全局变量，存储运行中的任务和日志
@@ -22,10 +28,11 @@ running_tasks = {}
 task_logs = {}
 install_status = {"napcat_installing": False, "nonebot_installing": False}
 
-# 获取可用版本 - 注意不要使用以/开头的路径
-@router.get("versions")
+# 获取可用版本
+@router.get("/versions")
 async def get_available_versions():
     """获取可用的MaiBot版本"""
+    logger.info("收到获取版本请求")
     try:
         # 这里可以从GitHub API获取实际版本
         versions = ["latest", "main", "stable", "v0.6.3", "v0.6.2", "v0.6.1", "v0.6.0"]
@@ -39,15 +46,18 @@ async def get_available_versions():
             "isLocalFallback": True
         }
 
-# 部署特定版本 - 支持/deploy/{version}路径
-@router.post("deploy/{version}")
-async def deploy_version(version: str, background_tasks: BackgroundTasks):
+# 部署特定版本
+@router.post("/deploy/{version}")
+async def deploy_version(version: str, background_tasks: BackgroundTasks, instance_name: str = None):
     """部署指定版本的MaiBot"""
-    logger.info(f"收到部署请求: {version}")
-    instance_name = f"maibot_{version}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    logger.info(f"收到部署请求 (URL路径参数): 版本={version}, 实例名称={instance_name}")
+    
+    # 如果没有提供实例名称，则生成一个
+    if not instance_name:
+        instance_name = f"MaiBot-{version}"
     
     # 后台执行部署任务
-    background_tasks.add_task(download_bot, instance_name, version)
+    background_tasks.add_task(download_bot_base, instance_name, version)
     
     return {
         "success": True,
@@ -56,37 +66,52 @@ async def deploy_version(version: str, background_tasks: BackgroundTasks):
         "timestamp": datetime.now().isoformat()
     }
 
-# 通用部署端点 - 支持 /deploy 路径
-@router.post("deploy")
-async def deploy_version_api(data: dict, background_tasks: BackgroundTasks):
-    """通过API路径接收部署请求
+# 通用部署端点 (基础下载和初始设置)
+@router.post("/deploy") # 改为 /deploy 以匹配前端API调用
+async def deploy_version_api(data: dict = Body(...), background_tasks: BackgroundTasks = None):
+    """通过API路径接收部署请求 (基础下载)
     
     Args:
         data: 包含version和instance_name的数据
+        background_tasks: 后台任务
     """
     version = data.get("version", "latest")
     instance_name = data.get("instance_name")
     
-    logger.info(f"收到JSON部署请求: {version}, 实例名称: {instance_name}")
+    logger.info(f"收到基础部署请求: 版本={version}, 实例名称={instance_name}")
+    print(f"【部署API】收到基础部署请求: 版本={version}, 实例名称={instance_name}")
     
     if not instance_name:
-        # 如果没有提供实例名称，则生成一个
-        instance_name = f"maibot_{version}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        current_time = datetime.now().strftime("%m%d%H%M")
+        instance_name = f"MaiBot-{version}-{current_time}"
+        logger.info(f"自动生成实例名称: {instance_name}")
+        print(f"【部署API】自动生成实例名称: {instance_name}")
     
-    # 后台执行部署任务
-    background_tasks.add_task(download_bot, instance_name, version)
+    instance_path = os.path.join(os.getcwd(), "MaiM-with-u", instance_name)
+    if os.path.exists(instance_path):
+        logger.warning(f"实例路径已存在，可能被覆盖: {instance_path}")
+        print(f"【部署API】警告: 实例路径已存在，可能被覆盖: {instance_path}")
+        # 允许覆盖，downloader.py 中的 _clean_instance 会处理清理
+    
+    # 后台执行基础下载和设置任务
+    if background_tasks:
+        background_tasks.add_task(download_bot_base, instance_name, version) # 改为调用 download_bot_base
+    else:
+        asyncio.create_task(download_bot_base(instance_name, version))
     
     return {
         "success": True,
-        "message": f"正在部署 {version} 版本",
+        "message": f"基础部署任务已启动: {version} 版本, 实例 {instance_name}",
         "instance_name": instance_name,
         "timestamp": datetime.now().isoformat()
     }
 
 # 获取部署状态
-@router.get("deploy/status/{instance_name}")
+@router.get("/deploy/status/{instance_name}")
 async def get_deploy_status(instance_name: str):
     """获取部署状态"""
+    logger.info(f"查询部署状态: {instance_name}")
+    
     if instance_name in running_tasks:
         return {
             "status": "running",
@@ -95,7 +120,7 @@ async def get_deploy_status(instance_name: str):
         }
     
     # 检查是否有安装完成的记录
-    install_path = os.path.join(os.path.expanduser("~"), "MaiM-with-u", instance_name)
+    install_path = os.path.join(os.getcwd(), "MaiM-with-u", instance_name)
     if os.path.exists(install_path):
         return {
             "status": "completed",
@@ -106,33 +131,39 @@ async def get_deploy_status(instance_name: str):
     
     return {"status": "not_found", "instance_name": instance_name}
 
-# 配置机器人 - 支持 /install/configure 路径
-@router.post("install/configure")
-async def configure_bot(config: Dict[str, Any], background_tasks: BackgroundTasks):
-    """配置MaiBot"""
-    logger.info(f"收到配置请求: {config.get('instance_name')}")
+# 配置机器人 (详细配置)
+@router.post("/install/configure") # 路径保持不变
+async def configure_bot_endpoint(config: Dict[str, Any], background_tasks: BackgroundTasks): # Renamed function for clarity
+    """配置MaiBot实例的详细设置"""
     instance_name = config.get("instance_name")
+    logger.info(f"收到详细配置请求: 实例 {instance_name}, 配置: {config}")
+    print(f"【配置API】收到详细配置请求: 实例 {instance_name}")
+    
     if not instance_name:
-        raise HTTPException(status_code=400, detail="缺少实例名称")
+        logger.error("配置请求缺少实例名称")
+        raise HTTPException(status_code=400, detail="配置请求缺少实例名称")
     
-    # 检查实例是否存在
-    install_path = os.path.join(os.path.expanduser("~"), "MaiM-with-u", instance_name)
+    install_path = os.path.join(os.getcwd(), "MaiM-with-u", instance_name)
     if not os.path.exists(install_path):
-        raise HTTPException(status_code=404, detail=f"实例 {instance_name} 不存在")
+        logger.error(f"实例基础目录不存在，无法配置: {install_path}")
+        print(f"【配置API】错误: 实例基础目录不存在: {install_path}")
+        # 理论上此时基础部署应该已创建目录，如果不存在则说明第一步有问题
+        raise HTTPException(status_code=404, detail=f"实例 {instance_name} 基础目录不存在，请先完成基础部署")
     
-    # 后台执行配置任务
-    background_tasks.add_task(configure_bot_task, install_path, instance_name, config)
+    # 后台执行详细配置任务
+    background_tasks.add_task(configure_bot_detailed, install_path, instance_name, config) # 改为调用 configure_bot_detailed
     
     return {
         "success": True,
-        "message": f"正在配置实例 {instance_name}",
+        "message": f"详细配置任务已启动: 实例 {instance_name}",
         "instance_name": instance_name
     }
 
-# 获取安装状态 - 支持 /install-status 路径
-@router.get("install-status")
+# 获取安装状态
+@router.get("/install-status")
 async def get_install_status():
     """获取安装状态"""
+    logger.info("查询安装状态")
     return install_status
 
 # 实用函数 - 添加日志
@@ -151,89 +182,123 @@ async def add_log(instance_name: str, level: str, message: str):
     # 限制日志条数
     if len(task_logs[instance_name]) > 1000:
         task_logs[instance_name] = task_logs[instance_name][-900:]
+    
+    # 打印日志到控制台
+    logger.info(f"[{instance_name}][{level}] {message}")
+    print(f"【日志】[{instance_name}][{level}] {message}")
 
-# 后台任务 - 下载机器人
-async def download_bot(instance_name: str, version: str):
-    """后台下载任务"""
-    running_tasks[instance_name] = "downloading"
+# 日志收集类，用于捕获子进程日志
+class LogCollector:
+    def __init__(self, instance_name):
+        self.instance_name = instance_name
+        self.buffer = []
+    
+    async def process_line(self, line):
+        if line.strip():
+            # 确定日志级别
+            level = "INFO"
+            if "错误" in line.lower() or "error" in line.lower():
+                level = "ERROR"
+            elif "警告" in line.lower() or "warning" in line.lower():
+                level = "WARNING"
+            elif "成功" in line.lower() or "success" in line.lower():
+                level = "SUCCESS"
+            
+            # 添加到日志
+            await add_log(self.instance_name, level, line.strip())
+            # 打印到控制台
+            print(f"【日志收集】[{self.instance_name}] {line.strip()}")
+    
+    def write(self, data):
+        for line in data.splitlines():
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.process_line(line))
+    
+    def flush(self):
+        pass
+
+# 后台任务 - 下载机器人 (基础)
+async def download_bot_base(instance_name: str, version: str):
+    """后台下载和基础设置任务"""
+    running_tasks[instance_name] = "downloading_base" # 更新任务状态标记
     
     try:
-        await add_log(instance_name, "INFO", f"开始部署 {version} 版本")
+        await add_log(instance_name, "INFO", f"开始基础部署 MaiBot {version} 到实例 {instance_name}")
+        print(f"【基础下载任务】启动: MaiBot {version}, 实例 {instance_name}")
         
-        # 模拟下载过程
-        await add_log(instance_name, "INFO", "克隆MaiBot和Adapter仓库...")
-        await asyncio.sleep(2)  # 模拟延迟
+        downloader = BotDownloader()
+        result = downloader.download(instance_name, version) # download 方法应只做基础下载和依赖安装
         
-        await add_log(instance_name, "SUCCESS", "仓库克隆成功")
-        
-        await add_log(instance_name, "INFO", "创建Python虚拟环境...")
-        await asyncio.sleep(1)  # 模拟延迟
-        
-        await add_log(instance_name, "SUCCESS", "虚拟环境创建成功")
-        
-        await add_log(instance_name, "INFO", "安装MaiBot和Adapter依赖...")
-        await asyncio.sleep(3)  # 模拟延迟
-        
-        await add_log(instance_name, "SUCCESS", "依赖安装成功")
-        await add_log(instance_name, "INFO", "部署完成，可以继续配置")
-        
+        if result.get("success"):
+            install_path = result.get("base_dir", os.path.join(os.getcwd(), "MaiM-with-u", instance_name))
+            if not os.path.exists(install_path): # Double check
+                await add_log(instance_name, "ERROR", f"基础部署后实例目录 {install_path} 仍不存在")
+                running_tasks.pop(instance_name, None)
+                return
+
+            await add_log(instance_name, "SUCCESS", "基础版本下载和依赖安装完成。")
+            print(f"【基础下载任务】{instance_name} 基础下载完成")
+            # 基础下载完成后，不清除 running_tasks，等待配置步骤或超时
+            # running_tasks.pop(instance_name, None) # 不在此处移除，配置步骤会更新或最终由轮询超时处理
+            running_tasks[instance_name] = "base_downloaded" # 更新状态
+        else:
+            error_message = result.get("message", "基础下载未知错误")
+            await add_log(instance_name, "ERROR", f"基础下载失败: {error_message}")
+            print(f"【基础下载任务】{instance_name} 基础下载失败: {error_message}")
+            running_tasks.pop(instance_name, None) # 失败则移除
+            
     except Exception as e:
-        logger.error(f"下载过程中出错: {e}", exc_info=True)
-        await add_log(instance_name, "ERROR", f"部署过程出错: {str(e)}")
-    finally:
+        error_message = f"基础下载过程中发生异常: {str(e)}"
+        await add_log(instance_name, "ERROR", error_message)
+        logger.error(error_message, exc_info=True)
+        print(f"【基础下载任务】{instance_name} 异常: {str(e)}")
         running_tasks.pop(instance_name, None)
 
-# 后台任务 - 配置机器人
-async def configure_bot_task(install_path: str, instance_name: str, config: Dict[str, Any]):
-    """后台配置任务"""
+# 后台任务 - 配置机器人 (详细)
+async def configure_bot_detailed(install_path: str, instance_name: str, config: Dict[str, Any]):
+    """后台详细配置任务"""
+    running_tasks[instance_name] = "configuring_detailed" # 更新任务状态标记
+    original_stdout = sys.stdout
+    log_collector = LogCollector(instance_name)
+
     try:
-        # 更新安装状态
+        # 更新前端轮询所需的状态
         install_status["napcat_installing"] = config.get("install_napcat", False)
-        install_status["nonebot_installing"] = config.get("install_nonebot", False)
+        # 假设 install_adapter 对应的是 nonebot (适配器) 的安装过程
+        install_status["nonebot_installing"] = config.get("install_adapter", False)
+
+        await add_log(instance_name, "INFO", f"开始详细配置实例 {instance_name}")
+        print(f"【详细配置任务】启动: 实例 {instance_name}")
         
-        # 模拟配置过程
-        await add_log(instance_name, "INFO", f"开始配置实例 {instance_name}")
+        # 重定向标准输出到日志收集器
+        sys.stdout = log_collector
+
+        configurator = BotConfigurator(install_path, instance_name)
         
-        await add_log(instance_name, "INFO", "配置MaiBot...")
-        await asyncio.sleep(1)  # 模拟延迟
+        # 从前端传递过来的参数中提取所需配置
+        # config 字典中应包含: qq_number, install_napcat, install_adapter, ports (内含 maibot, adapter, napcat)
+        # model_type 等其他参数也可以包含在 config 中传递
         
-        maibot_port = config.get("ports", {}).get("maibot", 8000)
-        await add_log(instance_name, "SUCCESS", f"MaiBot配置成功，端口: {maibot_port}")
+        config_result = configurator.configure(config) # configure 方法应能处理这些参数
         
-        # 配置Adapter
-        if config.get("install_napcat") or config.get("install_nonebot"):
-            await add_log(instance_name, "INFO", "配置MaiBot-Napcat-Adapter...")
-            await asyncio.sleep(1)  # 模拟延迟
-            
-            qq_number = config.get("qq_number", "")
-            napcat_port = config.get("ports", {}).get("napcat", 8095)
-            nonebot_port = config.get("ports", {}).get("nonebot", 18002)
-            
-            await add_log(instance_name, "SUCCESS", 
-                         f"Adapter配置成功，QQ: {qq_number}，NapCat端口: {napcat_port}，NoneBot端口: {nonebot_port}")
+        sys.stdout = original_stdout # 恢复标准输出
         
-        await add_log(instance_name, "INFO", "已创建NapCat配置指南")
-        
-        await add_log(instance_name, "SUCCESS", "启动脚本创建成功")
-        
-        # 运行安装脚本（如果需要）
-        if config.get("run_install_script", False):
-            await add_log(instance_name, "INFO", "正在执行安装脚本...")
-            await asyncio.sleep(2)  # 模拟延迟
-            await add_log(instance_name, "SUCCESS", "安装脚本执行完成")
-        
-        # 安装适配器（如果需要）
-        if config.get("install_adapter", False):
-            await add_log(instance_name, "INFO", "正在安装NoneBot适配器...")
-            await asyncio.sleep(2)  # 模拟延迟
-            await add_log(instance_name, "SUCCESS", "NoneBot适配器安装完成")
-        
-        await add_log(instance_name, "SUCCESS", "配置过程全部完成，MaiBot实例已准备就绪")
+        if config_result["success"]:
+            await add_log(instance_name, "SUCCESS", f"实例 {instance_name} 详细配置成功。")
+            await add_log(instance_name, "INFO", "所有安装和配置步骤已完成。")
+            print(f"【详细配置任务】{instance_name} 配置成功")
+        else:
+            await add_log(instance_name, "ERROR", f"详细配置失败: {config_result['message']}")
+            print(f"【详细配置任务】{instance_name} 配置失败: {config_result['message']}")
         
     except Exception as e:
-        logger.error(f"配置过程中出错: {e}", exc_info=True)
-        await add_log(instance_name, "ERROR", f"配置过程出错: {str(e)}")
+        if sys.stdout != original_stdout: #确保恢复
+            sys.stdout = original_stdout
+        logger.error(f"详细配置过程中出错: {e}", exc_info=True)
+        print(f"【详细配置任务】{instance_name} 异常: {str(e)}")
+        await add_log(instance_name, "ERROR", f"详细配置过程出错: {str(e)}")
     finally:
-        # 更新安装状态
         install_status["napcat_installing"] = False
         install_status["nonebot_installing"] = False
+        running_tasks.pop(instance_name, None) # 任务完成或失败后移除
+        print(f"【详细配置任务】{instance_name} 任务结束")

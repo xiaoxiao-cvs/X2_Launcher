@@ -24,6 +24,13 @@ logging.basicConfig(
 logger = logging.getLogger("x2-launcher")
 logger.info("正在启动X2 Launcher后端...")
 
+# 首先确保编码正确
+try:
+    from utils.encoding_fix import fix_encoding
+    fix_encoding()
+except ImportError:
+    print("警告: 无法导入编码修复模块，中文显示可能会有问题")
+
 # 创建FastAPI应用
 app = FastAPI(
     title="X2 Launcher API",
@@ -54,25 +61,25 @@ try:
     # 首先导入deploy路由
     from routes.deploy import router as deploy_router
     
-    # 1. 先注册到根路由 - 处理不带/api前缀的请求 (如 /deploy)
-    app.include_router(deploy_router)
+    # 在根路由上注册
+    app.include_router(deploy_router, prefix="")
     logger.info("已将部署路由注册到根路径")
     
-    # 2. 再注册到API路由 - 处理带/api前缀的请求 (如 /api/deploy)
-    api_router.include_router(deploy_router)
+    # 在API路由上注册
+    api_router.include_router(deploy_router, prefix="")
     logger.info("已将部署路由注册到API路径")
     
     # 加载其他API路由
     try:
         from routes.api import router as api_routes
-        api_router.include_router(api_routes)
+        api_router.include_router(api_routes, prefix="")
         logger.info("已加载通用API路由")
     except ImportError as e:
         logger.warning(f"加载通用API路由失败: {e}")
     
     try:
         from routes.websocket import router as ws_router
-        api_router.include_router(ws_router)
+        api_router.include_router(ws_router, prefix="")
         logger.info("已加载WebSocket路由")
     except ImportError as e:
         logger.warning(f"加载WebSocket路由失败: {e}")
@@ -90,7 +97,31 @@ try:
         app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="static")
         logger.info(f"已挂载前端静态文件: {frontend_path}")
     else:
-        logger.warning(f"前端目录不存在: {frontend_path}")
+        # 尝试创建基本的前端目录结构
+        frontend_path.mkdir(parents=True, exist_ok=True)
+        index_html = frontend_path / "index.html"
+        if not index_html.exists():
+            logger.warning(f"创建临时前端页面: {index_html}")
+            with open(index_html, "w", encoding="utf-8") as f:
+                f.write("""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>X² Launcher</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        h1 { color: #333; }
+        .message { color: #666; margin: 20px; }
+    </style>
+</head>
+<body>
+    <h1>X² Launcher</h1>
+    <div class="message">前端界面尚未构建，请先构建前端或访问API接口</div>
+    <p>API状态检查: <a href="/api/health">点击这里</a></p>
+</body>
+</html>""")
+        app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="static")
+        logger.info(f"已创建并挂载临时前端页面")
 except Exception as e:
     logger.error(f"挂载前端静态文件失败: {e}", exc_info=True)
 

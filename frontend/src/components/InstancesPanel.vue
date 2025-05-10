@@ -10,41 +10,33 @@
       <div class="section-title">已安装实例</div>
       <el-empty v-if="installedVersions.length === 0" description="暂无已安装实例" />
       <div v-else class="instance-grid">
-        <el-card 
-          v-for="instance in installedVersions" 
-          :key="instance.name"
-          class="instance-card"
-          :class="{'running': instance.status === 'running'}">
+        <el-card v-for="instance in installedVersions" :key="instance.name" class="instance-card"
+          :class="{ 'running': instance.status === 'running' }">
           <template #header>
             <div class="instance-header">
               <span class="instance-name">{{ instance.name }}</span>
               <el-tag :type="getStatusType(instance.status)" size="small">{{ getStatusText(instance.status) }}</el-tag>
             </div>
           </template>
-          
+
           <div class="instance-info">
             <p><strong>路径:</strong> {{ instance.path }}</p>
             <p><strong>安装时间:</strong> {{ instance.installedAt }}</p>
           </div>
-          
+
           <div class="instance-actions">
-            <el-button 
-              v-if="instance.status !== 'running'" 
-              type="success" 
-              size="small" 
+            <el-button v-if="instance.status !== 'running'" type="success" size="small"
               @click="startBot(instance.name)">
               启动MaiBot
             </el-button>
-            <el-button 
-              v-else
-              type="danger" 
-              size="small" 
-              @click="stopBot(instance.name)">
+            <el-button v-else type="danger" size="small" @click="stopBot(instance.name)">
               停止
             </el-button>
             <el-dropdown trigger="click">
               <el-button type="info" size="small">
-                更多 <el-icon><ArrowDown /></el-icon>
+                更多 <el-icon>
+                  <ArrowDown />
+                </el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -65,7 +57,7 @@
               </template>
             </el-dropdown>
           </div>
-          
+
           <!-- 启动状态指示器 -->
           <div class="service-status">
             <div class="service-item">
@@ -86,22 +78,16 @@
     </div>
 
     <div class="tip-section">
-      <el-alert
-        type="info"
-        show-icon
-        :closable="false">
+      <el-alert type="info" show-icon :closable="false">
         <template #title>
           <span>需要添加新的Bot实例？请前往<el-link @click="goToDownloads" type="primary">下载管理</el-link>页面</span>
         </template>
       </el-alert>
     </div>
-    
+
     <!-- 启动顺序提示 -->
     <div class="starting-guide">
-      <el-alert
-        type="warning"
-        show-icon
-        :closable="false">
+      <el-alert type="warning" show-icon :closable="false">
         <template #title>
           <span>正确的启动顺序</span>
         </template>
@@ -122,7 +108,8 @@
 import { ref, onMounted, inject, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowDown } from '@element-plus/icons-vue';
-import axios from 'axios';
+// 导入统一的API服务
+import { instancesApi } from '@/services/api';
 
 // 事件总线，用于给log通信
 const emitter = inject('emitter');
@@ -133,7 +120,7 @@ const installedVersions = ref([]);
 // 事件处理
 const fetchInstalledVersions = async () => {
   try {
-    const response = await axios.get('/api/instances');
+    const response = await instancesApi.getInstances();
     installedVersions.value = response.data.instances || [];
   } catch (error) {
     console.error('获取已安装实例失败:', error);
@@ -143,7 +130,7 @@ const fetchInstalledVersions = async () => {
 
 const startBot = async (instanceName) => {
   try {
-    const response = await axios.post(`/api/start/${instanceName}`);
+    const response = await instancesApi.startInstance(instanceName);
     if (response.data.success) {
       ElMessage.success('MaiBot已启动');
       fetchInstalledVersions();
@@ -156,10 +143,10 @@ const startBot = async (instanceName) => {
   }
 };
 
-// 启动Napcat功能（待重构）
+// 启动Napcat功能
 const startNapcat = async (instanceName) => {
   try {
-    const response = await axios.post(`/api/start/${instanceName}/napcat`);
+    const response = await instancesApi.startNapcat(instanceName);
     if (response.data.success) {
       ElMessage.success('NapCat已启动');
       fetchInstalledVersions();
@@ -190,7 +177,7 @@ const startNonebot = async (instanceName) => {
 
 const stopBot = async (instanceName) => {
   try {
-    const response = await axios.post('/api/stop');
+    const response = await instancesApi.stopInstance();
     if (response.data.success) {
       ElMessage.success('所有服务已停止');
       fetchInstalledVersions();
@@ -227,7 +214,7 @@ const showLogs = (instanceName) => {
 
 const openFolder = (path) => {
   // 通过后端API打开文件夹
-  axios.post('/api/open-folder', { path })
+  instancesApi.openFolder(path)
     .catch(error => {
       console.error('无法打开文件夹:', error);
       ElMessage.error('无法打开文件夹');
@@ -245,12 +232,12 @@ const confirmDelete = (instanceName) => {
     }
   ).then(() => {
     deleteInstance(instanceName);
-  }).catch(() => {});
+  }).catch(() => { });
 };
 
 const deleteInstance = async (instanceName) => {
   try {
-    const response = await axios.delete(`/api/instance/${instanceName}`);
+    const response = await instancesApi.deleteInstance(instanceName);
     if (response.data.success) {
       ElMessage.success('删除成功');
       fetchInstalledVersions();
@@ -282,7 +269,7 @@ const getStatusText = (status) => {
 
 // 添加服务状态显示辅助函数
 const getServiceType = (status) => {
-  switch(status) {
+  switch (status) {
     case 'running': return 'success';
     case 'stopped': return 'info';
     case 'error': return 'danger';
@@ -291,7 +278,7 @@ const getServiceType = (status) => {
 };
 
 const getServiceText = (status) => {
-  switch(status) {
+  switch (status) {
     case 'running': return '运行中';
     case 'stopped': return '已停止';
     case 'error': return '错误';
@@ -309,7 +296,7 @@ const goToDownloads = () => {
 // 初始化
 onMounted(() => {
   fetchInstalledVersions();
-  
+
   // 监听刷新实例列表事件
   if (emitter) {
     emitter.on('refresh-instances', fetchInstalledVersions);

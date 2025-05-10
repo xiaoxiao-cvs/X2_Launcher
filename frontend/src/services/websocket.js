@@ -12,174 +12,173 @@ const getWebSocketUrl = (path = '/api/logs/ws') => {
 // 模拟模式标志 - 如果WebSocket连接失败，我们将使用模拟模式
 let useMockMode = false;
 
+/**
+ * WebSocket服务类
+ * 提供可靠的WebSocket连接，支持自动重连功能
+ */
+
 export class WebSocketService {
   constructor(options = {}) {
-    this.url = options.url || '/api/logs/ws';
+    this.url = options.url;
     this.reconnectDelay = options.reconnectDelay || 3000;
     this.maxReconnectAttempts = options.maxReconnectAttempts || 5;
     this.autoReconnect = options.autoReconnect !== false;
     
-    this.socket = null;
-    this.reconnectCount = 0;
-    this.reconnectTimer = null;
-    this.events = {};
-    this.connected = false;
+    this.ws = null;
+    this.reconnectAttempts = 0;
+    this.listeners = {
+      open: [],
+      message: [],
+      close: [],
+      error: []
+    };
+    
+    if (this.url) {
+      this.connect();
+    }
   }
-
+  
+  /**
+   * 建立WebSocket连接
+   */
   connect() {
-    if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || 
-                         this.socket.readyState === WebSocket.OPEN)) {
+    if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+      console.warn('WebSocket已经连接，不需要重新连接');
       return;
     }
     
     try {
-      // 使用绝对URL或相对URL，确保WebSocket连接正确
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = this.url.startsWith('ws') ? this.url : 
-                    `${protocol}//${window.location.host}${this.url}`;
+      console.log('正在连接WebSocket:', this.url);
+      this.ws = new WebSocket(this.url);
       
-      console.log(`正在连接WebSocket: ${wsUrl}`);
-      this.socket = new WebSocket(wsUrl);
-      
-      this.socket.onopen = () => {
+      this.ws.onopen = (event) => {
         console.log('WebSocket连接已建立');
-        this.connected = true;
-        this.reconnectCount = 0;
-        this.emit('open');
+        this.reconnectAttempts = 0;
+        this._trigger('open', event);
       };
       
-      this.socket.onmessage = (event) => {
+      this.ws.onmessage = (event) => {
+        let data = event.data;
         try {
-          const data = JSON.parse(event.data);
-          this.emit('message', data);
-        } catch (err) {
-          this.emit('message', event.data);
+          data = JSON.parse(event.data);
+        } catch (e) {
+          // 如果不是JSON，保持原样
         }
+        this._trigger('message', data);
       };
       
-      this.socket.onerror = (error) => {
-        console.error('WebSocket错误:', error);
-        this.emit('error', error);
-      };
-      
-      this.socket.onclose = () => {
+      this.ws.onclose = (event) => {
         console.log('WebSocket连接已关闭');
-        this.connected = false;
-        this.emit('close');
+        this._trigger('close', event);
         
-        if (this.autoReconnect && this.reconnectCount < this.maxReconnectAttempts) {
-          this.reconnectTimer = setTimeout(() => {
-            console.log(`尝试重新连接 (${this.reconnectCount + 1}/${this.maxReconnectAttempts})`);
-            this.reconnectCount++;
-            this.connect();
-          }, this.reconnectDelay);
-        } else if (this.reconnectCount >= this.maxReconnectAttempts) {
-          console.warn('达到最大重连次数，启用模拟模式');
-          this.startMockMode();
+        if (this.autoReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+          this._scheduleReconnect();
         }
+      };
+      
+      this.ws.onerror = (event) => {
+        console.error('WebSocket错误:', event);
+        this._trigger('error', event);
       };
     } catch (error) {
       console.error('创建WebSocket连接失败:', error);
-      this.emit('error', error);
-      // 延迟重试
-      if (this.autoReconnect) {
-        this.reconnectTimer = setTimeout(() => {
-          this.connect();
-        }, this.reconnectDelay);
+      if (this.autoReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+        this._scheduleReconnect();
       }
     }
   }
   
+  /**
+   * 安排重新连接
+   * @private
+   */
+  _scheduleReconnect() {
+    this.reconnectAttempts++;
+    console.log(`计划重新连接 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+    
+    setTimeout(() => {
+      console.log(`尝试重新连接 #${this.reconnectAttempts}`);
+      this.connect();
+    }, this.reconnectDelay);
+  }
+  
+  /**
+   * 发送消息
+   * @param {*} data 要发送的数据
+   */
   send(data) {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket未连接，无法发送消息');
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.error('无法发送消息，WebSocket未连接');
       return false;
     }
     
     try {
-      const message = typeof data === 'string' ? data : JSON.stringify(data);
-      this.socket.send(message);
+      let message = data;
+      if (typeof data === 'object') {
+        message = JSON.stringify(data);
+      }
+      this.ws.send(message);
       return true;
     } catch (error) {
-      console.error('发送WebSocket消息失败:', error);
+      console.error('发送消息失败:', error);
       return false;
     }
   }
   
+  /**
+   * 关闭连接
+   */
   disconnect() {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
+    if (this.ws) {
+      this.autoReconnect = false;
+      this.ws.close();
     }
-    
-    if (this.socket) {
-      this.socket.close();
-      this.socket = null;
-    }
-    
-    this.connected = false;
   }
   
+  /**
+   * 注册事件监听器
+   * @param {string} event 事件名称
+   * @param {Function} callback 回调函数
+   */
   on(event, callback) {
-    if (!this.events[event]) {
-      this.events[event] = [];
+    if (!this.listeners[event]) {
+      this.listeners[event] = [];
     }
-    
-    this.events[event].push(callback);
+    this.listeners[event].push(callback);
     return this;
   }
   
+  /**
+   * 移除事件监听器
+   * @param {string} event 事件名称
+   * @param {Function} callback 回调函数
+   */
   off(event, callback) {
-    if (!this.events[event]) {
-      return this;
-    }
+    if (!this.listeners[event]) return this;
     
     if (!callback) {
-      delete this.events[event];
-      return this;
+      this.listeners[event] = [];
+    } else {
+      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
     }
-    
-    this.events[event] = this.events[event].filter(cb => cb !== callback);
     return this;
   }
   
-  emit(event, ...args) {
-    if (!this.events[event]) {
-      return;
-    }
-    
-    this.events[event].forEach(callback => {
+  /**
+   * 触发事件
+   * @param {string} event 事件名称
+   * @param {*} data 事件数据
+   * @private
+   */
+  _trigger(event, data) {
+    if (!this.listeners[event]) return;
+    this.listeners[event].forEach(callback => {
       try {
-        callback(...args);
+        callback(data);
       } catch (error) {
-        console.error(`执行事件回调出错 (${event}):`, error);
+        console.error(`执行${event}事件监听器失败:`, error);
       }
     });
-  }
-  
-  startMockMode() {
-    try {
-      window._useMockData = true;
-      window.localStorage.setItem('useMockData', 'true');
-      console.warn('已切换到模拟数据模式 (WebSocket连接失败)');
-      
-      // 每10秒发送一次模拟数据
-      setInterval(() => {
-        const mockData = {
-          time: new Date().toISOString(),
-          level: 'INFO',
-          message: '这是模拟日志数据，WebSocket连接失败',
-          source: 'mock'
-        };
-        this.emit('message', mockData);
-      }, 10000);
-    } catch (e) {
-      // 忽略存储错误
-    }
-  }
-  
-  isConnected() {
-    return this.connected;
   }
 }
 

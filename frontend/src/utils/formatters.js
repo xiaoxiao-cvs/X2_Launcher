@@ -130,3 +130,14 @@ export const generateSidebarColor = (themeColor, isDarkMode, opacity = 0.65) => 
   
   return hexToRgba(baseColor, opacity);
 };
+
+export function formatDate(date) {
+    return date.toLocaleDateString();
+}
+
+export function isPortValid(ports) {
+    if (!ports || typeof ports !== 'object') return false;
+    return Object.values(ports).every(port => 
+        typeof port === 'string' && /^\d+$/.test(port) && parseInt(port) >= 1024 && parseInt(port) <= 65535
+    );
+}
