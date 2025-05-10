@@ -29,7 +29,7 @@ export const deployApi = {
 
   // 部署版本 - 修复这里，确保提供deploy方法
   deploy: (version, instanceName) =>
-    axios.post(createUrl("/deploy"), {
+    axios.post("/api/deploy", {
       version,
       instance_name: instanceName,
     }),

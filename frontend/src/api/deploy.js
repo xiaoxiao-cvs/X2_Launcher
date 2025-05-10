@@ -52,7 +52,6 @@ export const deployVersion = async (version, instanceName) => {
     return response.data;
   } catch (error) {
     console.error(`API: 基础部署版本 ${version} 失败:`, error);
-    // 返回一个符合预期的错误结构
     return {
       success: false,
       message:

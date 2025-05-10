@@ -75,7 +75,6 @@ const refreshDownloads = async () => {
     console.log('刷新实例列表...');
     const response = await instancesApi.getInstances();
     if (response.data && response.data.instances) {
-      // API返回的格式可能不是我们想要的，转换一个通用格式
       installHistory.value = response.data.instances.map(instance => ({
         id: instance.name,
         name: instance.name,
@@ -84,13 +83,9 @@ const refreshDownloads = async () => {
         path: instance.path
       }));
       console.log(`获取到${installHistory.value.length}个实例`);
-    } else {
-      installHistory.value = [];
-      console.log('未获取到实例');
     }
   } catch (error) {
-    console.error('获取安装历史失败:', error);
-    ElMessage.error('获取安装历史失败');
+    handleApiError(error); // 使用通用错误处理函数
   } finally {
     loading.value = false;
   }

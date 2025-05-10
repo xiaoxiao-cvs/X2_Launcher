@@ -167,7 +167,7 @@ X2 Launcher API提供了一系列接口，用于管理、部署和监控MaiBot�
 
 #### 获取系统日志
 
-**请求**:
+**请求**: 
 - 方法: `GET`
 - 路径: `/api/logs/system`
 
@@ -221,9 +221,9 @@ X2 Launcher API提供了一系列接口，用于管理、部署和监控MaiBot�
 
 ### 部署特定版本
 
-#### 通过路径参数
+##### 通过路径参数
 
-**请求**:
+**请求**: 
 - 方法: `POST`
 - 路径: `/api/deploy/{version}` 或 `/deploy/{version}`
 - URL参数:
@@ -239,9 +239,9 @@ X2 Launcher API提供了一系列接口，用于管理、部署和监控MaiBot�
 }
 ```
 
-#### 通过JSON数据
+##### 通过JSON数据
 
-**请求**:
+**请求**: 
 - 方法: `POST`
 - 路径: `/api/deploy` 或 `/deploy`
 - 请求体:

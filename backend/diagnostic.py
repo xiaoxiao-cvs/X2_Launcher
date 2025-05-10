@@ -211,32 +211,6 @@ def check_encoding_issues():
     encoding_fix_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "encoding_fix.py")
     has_encoding_fix = os.path.exists(encoding_fix_path)
     print_status(f"编码修复模块: {encoding_fix_path}", has_encoding_fix)
-    
-    # 测试中文字符写入和读取
-    try:
-        test_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "encoding_test.txt")
-        test_content = "这是一个中文测试文本"
-        
-        # 写入测试文件
-        with open(test_file, "w", encoding="utf-8") as f:
-            f.write(test_content)
-        
-        # 读取测试文件
-        with open(test_file, "r", encoding="utf-8") as f:
-            read_content = f.read()
-        
-        # 验证内容
-        content_match = read_content == test_content
-        print_status(f"中文文件读写测试: {'成功' if content_match else '失败'}", content_match)
-        
-        # 测试控制台输出
-        print_status("中文控制台输出测试: 你好，世界！", True)
-        
-        # 清理测试文件
-        if os.path.exists(test_file):
-            os.remove(test_file)
-    except Exception as e:
-        print_status(f"中文编码测试失败: {str(e)}", False)
 
 def suggest_fixes(issues):
     """根据发现的问题提供修复建议"""

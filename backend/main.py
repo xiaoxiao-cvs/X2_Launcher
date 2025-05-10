@@ -58,17 +58,6 @@ async def health_check():
 
 # 引入其他路由
 try:
-    # 首先导入deploy路由
-    from routes.deploy import router as deploy_router
-    
-    # 在根路由上注册
-    app.include_router(deploy_router, prefix="")
-    logger.info("已将部署路由注册到根路径")
-    
-    # 在API路由上注册
-    api_router.include_router(deploy_router, prefix="")
-    logger.info("已将部署路由注册到API路径")
-    
     # 加载其他API路由
     try:
         from routes.api import router as api_routes
@@ -85,7 +74,15 @@ try:
         logger.warning(f"加载WebSocket路由失败: {e}")
         
 except ImportError as e:
-    logger.error(f"加载部署路由失败: {e}", exc_info=True)
+    logger.error(f"加载其他路由失败: {e}", exc_info=True)
+
+# 引入部署管理路由
+try:
+    from routes.deploy_manager import router as deploy_manager_router
+    app.include_router(deploy_manager_router, prefix="/api")
+    logger.info("已将部署管理路由注册到 /api 路径")  # 修复日志信息，明确路径
+except ImportError as e:
+    logger.error(f"加载部署管理路由失败: {e}", exc_info=True)
 
 # 包含API路由到主应用
 app.include_router(api_router)

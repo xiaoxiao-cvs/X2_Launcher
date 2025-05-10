@@ -25,7 +25,7 @@ class EventBus {
    */
   emit(event, ...args) {
     if (!this._events[event]) return;
-    this._events[event].forEach(callback => callback(...args));
+    this._events[event].forEach((callback) => callback(...args));
     return this; // 支持链式调用
   }
 
@@ -35,10 +35,9 @@ class EventBus {
    * @param {Function} callback 要移除的回调函数，如果不提供则移除该事件的所有监听器
    */
   off(event, callback) {
-    if (!this._events[event]) return this;
-    
+    if (!this._events[event]) return;
     if (callback) {
-      this._events[event] = this._events[event].filter(cb => cb !== callback);
+      this._events[event] = this._events[event].filter((cb) => cb !== callback);
     } else {
       delete this._events[event];
     }
